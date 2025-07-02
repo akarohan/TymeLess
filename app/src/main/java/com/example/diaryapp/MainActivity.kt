@@ -28,6 +28,21 @@ import android.widget.Toast
 import android.util.Log
 import android.widget.LinearLayout
 import android.view.View
+import android.widget.ImageView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import android.widget.Button
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
+import java.io.File
+import java.io.FileOutputStream
+import android.provider.MediaStore
+import android.app.AlertDialog
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
+import com.yalantis.ucrop.UCrop
+import androidx.core.view.GravityCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,6 +50,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var selectedDate: Long = System.currentTimeMillis()
     private lateinit var db: DiaryDatabase
+    private lateinit var pickProfileImageLauncher: androidx.activity.result.ActivityResultLauncher<String>
+    private lateinit var takeProfileImageLauncher: androidx.activity.result.ActivityResultLauncher<android.net.Uri>
+    private var cameraImageUri: android.net.Uri? = null
+    private val CAMERA_PERMISSION_REQUEST_CODE = 1001
+    private lateinit var cropImageLauncher: androidx.activity.result.ActivityResultLauncher<android.content.Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,22 +62,22 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.appBarMain.toolbar)
+        // setSupportActionBar(binding.appBarMain.toolbar) // keep this to use the toolbar
 
         val drawerLayout: DrawerLayout = binding.drawerLayout
         val navView: NavigationView = findViewById(R.id.nav_view)
-        val navController = findNavController(R.id.nav_host_fragment_content_main)
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
-        appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow
-            ), drawerLayout
-        )
-        setupActionBarWithNavController(navController, appBarConfiguration)
+        // appBarConfiguration = AppBarConfiguration(
+        //     setOf(
+        //         R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow
+        //     ), drawerLayout
+        // )
+        // setupActionBarWithNavController(navController, appBarConfiguration)
 
         db = DiaryDatabase.getDatabase(this)
 
+        // Now safe to call updateDrawerHeader
         updateDrawerHeader()
         updateDateText()
 
@@ -95,11 +115,97 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         }
+
+        val headerView = navView.getHeaderView(0)
+        val settingsButton = headerView.findViewById<Button>(R.id.navSettingsButton)
+        settingsButton?.setOnClickListener {
+            startActivity(Intent(this, SettingsMainActivity::class.java))
+        }
+
+        // Open right-side navigation drawer when profile icon is tapped
+        val toolbarProfileImageView = binding.appBarMain.toolbar.findViewById<de.hdodenhof.circleimageview.CircleImageView>(R.id.profileImageView)
+        toolbarProfileImageView?.setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.END)
+        }
+
+        cropImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val data = result.data
+                val resultUri = UCrop.getOutput(data!!)
+                if (resultUri != null) {
+                    saveProfileImageFromUri(resultUri)
+                }
+            }
+        }
+        pickProfileImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let {
+                launchCropper(it)
+            }
+        }
+        takeProfileImageLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success: Boolean ->
+            val file = File(filesDir, "profile_image.jpg")
+            if (success && file.exists() && file.length() > 0) {
+                launchCropper(android.net.Uri.fromFile(file))
+            } else {
+                Toast.makeText(this, "Failed to save photo. Please try again.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        val profileImageView = headerView.findViewById<ImageView>(R.id.imageView)
+        profileImageView?.setOnClickListener {
+            val options = arrayOf("Choose a Picture", "Take a Picture", "Remove Picture")
+            AlertDialog.Builder(this)
+                .setTitle("Profile Picture")
+                .setItems(options) { dialog, which ->
+                    when (which) {
+                        0 -> pickProfileImageLauncher.launch("image/*")
+                        1 -> {
+                            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.CAMERA), CAMERA_PERMISSION_REQUEST_CODE)
+                                return@setItems
+                            }
+                            launchCameraForProfileImage()
+                        }
+                        2 -> removeProfileImage()
+                    }
+                }
+                .show()
+        }
+
+        // Update toolbar profile icon as well
+        val prefsToolbar = getEncryptedPrefs()
+        val profilePicUri = prefsToolbar.getString("profile_pic_uri", null)
+        if (profilePicUri != null && toolbarProfileImageView != null) {
+            val uri = if (profilePicUri.startsWith("/")) {
+                android.net.Uri.fromFile(java.io.File(profilePicUri))
+            } else {
+                android.net.Uri.parse(profilePicUri)
+            }
+            Glide.with(this)
+                .load(uri)
+                .placeholder(R.drawable.ic_user_placeholder)
+                .error(R.drawable.ic_user_placeholder)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .into(toolbarProfileImageView)
+        } else if (toolbarProfileImageView != null) {
+            toolbarProfileImageView.setImageResource(R.drawable.ic_user_placeholder)
+        }
+
+        // Set greeting message below the logo based on time and user name
+        val greetingTextView = binding.appBarMain.toolbar.findViewById<TextView>(R.id.greeting)
+        val prefsGreeting = getEncryptedPrefs()
+        val userName = prefsGreeting.getString("name", "User") ?: "User"
+        greetingTextView?.text = getGreetingMessage(userName)
     }
 
     private fun updateDrawerHeader() {
-        val nameTextView = findViewById<TextView>(R.id.navUserName)
-        val usernameTextView = findViewById<TextView>(R.id.navUserUsername)
+        val navView: com.google.android.material.navigation.NavigationView = findViewById(R.id.nav_view)
+        val headerView = navView.getHeaderView(0)
+        if (headerView == null) return
+        val nameTextView = headerView.findViewById<TextView>(R.id.navUserName)
+        val usernameTextView = headerView.findViewById<TextView>(R.id.navUserUsername)
+        val profileImageView = headerView.findViewById<ImageView>(R.id.imageView)
         val prefs = EncryptedSharedPreferences.create(
             "diary_auth_prefs",
             MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC),
@@ -107,12 +213,31 @@ class MainActivity : AppCompatActivity() {
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
-        nameTextView?.text = prefs.getString("name", "User")
-        usernameTextView?.text = prefs.getString("username", "username")
+        val loadedName = prefs.getString("name", "User")
+        val loadedUsername = prefs.getString("username", "username")
+        val profilePicUri = prefs.getString("profile_pic_uri", null)
+        Log.d("DrawerHeader", "Loaded name: $loadedName, username: $loadedUsername, profilePicUri: $profilePicUri")
+        nameTextView?.text = loadedName
+        usernameTextView?.text = loadedUsername
         nameTextView?.setTextColor(android.graphics.Color.WHITE)
         usernameTextView?.setTextColor(android.graphics.Color.WHITE)
-        // Set header background to black
         (nameTextView?.parent as? View)?.setBackgroundColor(android.graphics.Color.BLACK)
+        if (profilePicUri != null && profileImageView != null) {
+            val uri = if (profilePicUri.startsWith("/")) {
+                android.net.Uri.fromFile(java.io.File(profilePicUri))
+            } else {
+                android.net.Uri.parse(profilePicUri)
+            }
+            Glide.with(this)
+                .load(uri)
+                .placeholder(R.drawable.ic_user_placeholder)
+                .error(R.drawable.ic_user_placeholder)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .into(profileImageView)
+        } else if (profileImageView != null) {
+            profileImageView.setImageResource(R.drawable.ic_user_placeholder)
+        }
     }
 
     private fun updateDateText() {
@@ -135,5 +260,82 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         // TODO: Implement save logic
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateDrawerHeader()
+        // Update greeting message on resume
+        val greetingTextView = binding.appBarMain.toolbar.findViewById<TextView>(R.id.greeting)
+        val prefsGreeting = getEncryptedPrefs()
+        val userName = prefsGreeting.getString("name", "User") ?: "User"
+        greetingTextView?.text = getGreetingMessage(userName)
+    }
+
+    private fun launchCameraForProfileImage() {
+        val file = File(filesDir, "profile_image.jpg")
+        cameraImageUri = androidx.core.content.FileProvider.getUriForFile(
+            this,
+            "$packageName.fileprovider",
+            file
+        )
+        takeProfileImageLauncher.launch(cameraImageUri)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            launchCameraForProfileImage()
+        }
+    }
+
+    private fun launchCropper(sourceUri: Uri) {
+        val destUri = android.net.Uri.fromFile(File(filesDir, "profile_image_cropped.jpg"))
+        val uCrop = UCrop.of(sourceUri, destUri)
+            .withAspectRatio(1f, 1f)
+            .withMaxResultSize(512, 512)
+        cropImageLauncher.launch(uCrop.getIntent(this))
+    }
+
+    private fun saveProfileImageFromUri(uri: Uri) {
+        try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val file = File(filesDir, "profile_image.jpg")
+            val outputStream = FileOutputStream(file)
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+            // Save file path in preferences
+            val prefs = getEncryptedPrefs()
+            prefs.edit().putString("profile_pic_uri", file.absolutePath).apply()
+            updateDrawerHeader()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun removeProfileImage() {
+        val file = File(filesDir, "profile_image.jpg")
+        if (file.exists()) file.delete()
+        val prefs = getEncryptedPrefs()
+        prefs.edit().remove("profile_pic_uri").apply()
+        updateDrawerHeader()
+    }
+
+    private fun getEncryptedPrefs() = EncryptedSharedPreferences.create(
+        "diary_auth_prefs",
+        MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC),
+        this,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
+
+    private fun getGreetingMessage(name: String): String {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        return when {
+            hour in 5..11 -> "Good Morning, $name"
+            hour in 12..16 -> "Good Afternoon, $name"
+            else -> "Good Evening, $name"
+        }
     }
 }

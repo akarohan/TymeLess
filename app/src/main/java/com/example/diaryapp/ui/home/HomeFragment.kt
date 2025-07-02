@@ -16,6 +16,11 @@ import com.example.diaryapp.EditEntryActivity
 import com.example.diaryapp.databinding.FragmentHomeBinding
 import kotlinx.coroutines.launch
 import com.google.android.material.snackbar.Snackbar
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import de.hdodenhof.circleimageview.CircleImageView
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 
 class HomeFragment : Fragment() {
 
@@ -89,24 +94,9 @@ class HomeFragment : Fragment() {
 
         val fab = binding.addEntryFab
         fab.setOnClickListener {
-            val today = java.util.Calendar.getInstance().apply {
-                set(java.util.Calendar.HOUR_OF_DAY, 0)
-                set(java.util.Calendar.MINUTE, 0)
-                set(java.util.Calendar.SECOND, 0)
-                set(java.util.Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            val hasTodayEntry = adapter.entries.any {
-                val entryCal = java.util.Calendar.getInstance().apply { timeInMillis = it.date }
-                entryCal.get(java.util.Calendar.YEAR) == java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) &&
-                entryCal.get(java.util.Calendar.DAY_OF_YEAR) == java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR)
-            }
-            if (hasTodayEntry) {
-                android.widget.Toast.makeText(requireContext(), "You can only update today's entry.", android.widget.Toast.LENGTH_SHORT).show()
-            } else {
-                val intent = Intent(requireContext(), EditEntryActivity::class.java)
-                // No extras: new blank entry
-                startActivity(intent)
-            }
+            val intent = Intent(requireContext(), EditEntryActivity::class.java)
+            // No extras: new blank entry
+            startActivity(intent)
         }
 
         return root

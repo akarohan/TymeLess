@@ -35,11 +35,17 @@ class ImageBlockAdapter(
         val imageView: ImageView = itemView.findViewById(R.id.imageView)
         val btnRemove: ImageButton = itemView.findViewById(R.id.btnRemove)
         fun bind(uri: Uri) {
-            // Use Glide to load the image and get its size
+            val finalUri = if (uri.scheme == null || uri.scheme == "file") {
+                // If the Uri is a file path or has no scheme, use fromFile
+                Uri.fromFile(java.io.File(uri.path ?: ""))
+            } else {
+                uri
+            }
             Glide.with(imageView.context)
-                .load(uri)
+                .load(finalUri)
+                .placeholder(R.drawable.bg_image_rounded)
+                .error(R.drawable.bg_image_rounded)
                 .into(imageView)
-            // Optionally, you can use Glide's .listener to get the bitmap and adjust layout params
         }
     }
 } 

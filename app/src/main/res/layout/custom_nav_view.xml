@@ -6,21 +6,14 @@
     android:orientation="vertical"
     android:background="@android:color/white">
 
-    <include layout="@layout/nav_header_main" />
-
-    <androidx.core.widget.NestedScrollView
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fillViewport="true">
-
-        <com.google.android.material.navigation.NavigationView
-            android:id="@+id/nav_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:menu="@menu/activity_main_drawer"
-            android:background="@android:color/white"/>
-    </androidx.core.widget.NestedScrollView>
+        app:headerLayout="@layout/nav_header_main"
+        app:menu="@menu/activity_main_drawer"
+        android:background="@android:color/white"/>
 
     <include layout="@layout/nav_footer_main" />
 

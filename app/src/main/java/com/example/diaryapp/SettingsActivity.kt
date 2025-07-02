@@ -8,6 +8,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import java.security.MessageDigest
+import android.net.Uri
+import android.content.Intent
+import android.provider.MediaStore
+import android.widget.ImageView
+import androidx.activity.result.contract.ActivityResultContracts
+import com.bumptech.glide.Glide
+import android.util.Log
+import java.io.File
+import java.io.FileOutputStream
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var nameInput: EditText
@@ -33,6 +42,10 @@ class SettingsActivity : AppCompatActivity() {
         val prefs = getEncryptedPrefs()
         nameInput.setText(prefs.getString("name", ""))
         usernameInput.setText(prefs.getString("username", ""))
+        // Log loaded values
+        val loadedName = prefs.getString("name", "")
+        val loadedUsername = prefs.getString("username", "")
+        Log.d("SettingsLoad", "Loaded name: $loadedName, username: $loadedUsername")
 
         saveButton.setOnClickListener {
             val name = nameInput.text.toString().trim()
@@ -49,7 +62,8 @@ class SettingsActivity : AppCompatActivity() {
                 editor.putString("password_hash", hash(password))
             }
             editor.apply()
-            Toast.makeText(this, "Details updated", Toast.LENGTH_SHORT).show()
+            Log.d("SettingsSave", "Saved name: $name, username: $username")
+            Toast.makeText(this, "Saved: $name, $username", Toast.LENGTH_SHORT).show()
             finish()
         }
     }

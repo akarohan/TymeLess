@@ -11,6 +11,10 @@ import com.example.diaryapp.DiaryEntry
 import com.example.diaryapp.R
 import java.text.SimpleDateFormat
 import java.util.*
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
 
 class DiaryEntryAdapter(
     var entries: List<DiaryEntry>,
@@ -37,8 +41,11 @@ class DiaryEntryAdapter(
         private val titleText: TextView = itemView.findViewById(R.id.entryTitle)
         private val dateText: TextView = itemView.findViewById(R.id.entryDate)
         private val previewText: TextView = itemView.findViewById(R.id.entryPreview)
-        private val imageView: ImageView = itemView.findViewById(R.id.entryImage)
+        private val imageLeft: ImageView = itemView.findViewById(R.id.imageLeft)
+        private val imageTopRight: ImageView = itemView.findViewById(R.id.imageTopRight)
+        private val imageBottomRight: ImageView = itemView.findViewById(R.id.imageBottomRight)
         private val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
+        private val imagesRow: View = itemView.findViewById(R.id.imagesRow)
         private var currentEntry: DiaryEntry? = null
 
         init {
@@ -56,12 +63,38 @@ class DiaryEntryAdapter(
             val sdf = SimpleDateFormat("d MMMM yyyy", Locale.getDefault())
             dateText.text = sdf.format(Date(entry.date))
             previewText.text = android.text.Html.fromHtml(entry.htmlContent).toString().take(60)
-            if (entry.imagePaths.isNotEmpty()) {
-                imageView.visibility = View.VISIBLE
-                imageView.setImageURI(android.net.Uri.parse(entry.imagePaths[0]))
-            } else {
-                imageView.visibility = View.GONE
+
+            // Bind up to 3 images
+            val imageViews = listOf(imageLeft, imageTopRight, imageBottomRight)
+            var hasImage = false
+            val cornerRadiusPx = (16 * imageViews[0].context.resources.displayMetrics.density).toInt()
+            for (i in imageViews.indices) {
+                if (entry.imagePaths.size > i) {
+                    val path = entry.imagePaths[i]
+                    val uri = if (path.startsWith("/")) {
+                        val file = java.io.File(path)
+                        if (file.exists()) android.net.Uri.fromFile(file) else null
+                    } else if (path.startsWith("content://")) {
+                        android.net.Uri.parse(path)
+                    } else null
+
+                    if (uri != null) {
+                        imageViews[i].visibility = View.VISIBLE
+                        Glide.with(imageViews[i].context)
+                            .load(uri)
+                            .transform(CenterCrop(), RoundedCorners(cornerRadiusPx))
+                            .skipMemoryCache(true)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .into(imageViews[i])
+                        hasImage = true
+                    } else {
+                        imageViews[i].visibility = View.GONE
+                    }
+                } else {
+                    imageViews[i].visibility = View.GONE
+                }
             }
+            imagesRow.visibility = if (hasImage) View.VISIBLE else View.GONE
         }
     }
 } 

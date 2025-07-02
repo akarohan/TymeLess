@@ -21,6 +21,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.google.android.material.chip.Chip
+import androidx.core.content.ContextCompat
+import com.google.android.material.button.MaterialButton
 
 class EditEntryActivity : AppCompatActivity() {
     private lateinit var richEditor: RichEditor
@@ -39,8 +42,13 @@ class EditEntryActivity : AppCompatActivity() {
 
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
-            imageUris.add(it)
-            imageBlockAdapter.notifyItemInserted(imageUris.size - 1)
+            val filePath = copyUriToInternalStorage(it)
+            if (filePath != null) {
+                imageUris.add(Uri.fromFile(java.io.File(filePath)))
+                imageBlockAdapter.notifyItemInserted(imageUris.size - 1)
+            } else {
+                Toast.makeText(this, "Failed to copy image", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -63,9 +71,10 @@ class EditEntryActivity : AppCompatActivity() {
         }
 
         val toolbarTitle = findViewById<TextView>(R.id.toolbarTitle)
-        val datePickerButton = findViewById<Button>(R.id.datePickerButton)
+        val datePickerChip = findViewById<Chip>(R.id.datePickerChip)
 
         richEditor = findViewById(R.id.richEditor)
+        val editorScrollView = findViewById<android.widget.ScrollView>(R.id.editorScrollView)
         titleEditText = findViewById(R.id.titleEditText)
         saveButton = findViewById(R.id.saveButton)
         db = DiaryDatabase.getDatabase(this)
@@ -101,9 +110,9 @@ class EditEntryActivity : AppCompatActivity() {
         // Format and set initial date on button
         val calendar = java.util.Calendar.getInstance()
         calendar.timeInMillis = entryDate
-        updateDateButtonText(datePickerButton, calendar)
+        updateDateChipText(datePickerChip, calendar)
 
-        datePickerButton.setOnClickListener {
+        datePickerChip.setOnClickListener {
             val year = calendar.get(java.util.Calendar.YEAR)
             val month = calendar.get(java.util.Calendar.MONTH)
             val day = calendar.get(java.util.Calendar.DAY_OF_MONTH)
@@ -112,7 +121,7 @@ class EditEntryActivity : AppCompatActivity() {
                 { _, y, m, d ->
                     calendar.set(y, m, d)
                     entryDate = calendar.timeInMillis
-                    updateDateButtonText(datePickerButton, calendar)
+                    updateDateChipText(datePickerChip, calendar)
                 }, year, month, day)
             datePickerDialog.show()
         }
@@ -141,6 +150,51 @@ class EditEntryActivity : AppCompatActivity() {
             imageUri = photoUri
             cameraLauncher.launch(photoUri)
         }
+
+        // Formatting buttons
+        val btnBold = findViewById<MaterialButton>(R.id.btnBold)
+        val btnItalic = findViewById<MaterialButton>(R.id.btnItalic)
+        val btnUnderline = findViewById<MaterialButton>(R.id.btnUnderline)
+        val btnStrikethrough = findViewById<MaterialButton>(R.id.btnStrikethrough)
+
+        fun updateFormatButtonColors(button: MaterialButton) {
+            val context = button.context
+            if (button.isChecked) {
+                button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.black)
+                button.setTextColor(ContextCompat.getColor(context, R.color.white))
+            } else {
+                button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.white)
+                button.setTextColor(ContextCompat.getColor(context, R.color.black))
+            }
+        }
+
+        btnBold.setOnClickListener {
+            btnBold.isChecked = !btnBold.isChecked
+            updateFormatButtonColors(btnBold)
+            richEditor.setBold()
+        }
+        btnItalic.setOnClickListener {
+            btnItalic.isChecked = !btnItalic.isChecked
+            updateFormatButtonColors(btnItalic)
+            richEditor.setItalic()
+        }
+        btnUnderline.setOnClickListener {
+            btnUnderline.isChecked = !btnUnderline.isChecked
+            updateFormatButtonColors(btnUnderline)
+            richEditor.setUnderline()
+        }
+        btnStrikethrough.setOnClickListener {
+            btnStrikethrough.isChecked = !btnStrikethrough.isChecked
+            updateFormatButtonColors(btnStrikethrough)
+            richEditor.setStrikeThrough()
+        }
+        listOf(btnBold, btnItalic, btnUnderline, btnStrikethrough).forEach { updateFormatButtonColors(it) }
+
+        richEditor.setOnTextChangeListener {
+            editorScrollView.post {
+                editorScrollView.fullScroll(android.view.View.FOCUS_DOWN)
+            }
+        }
     }
 
     override fun onPause() {
@@ -150,7 +204,9 @@ class EditEntryActivity : AppCompatActivity() {
 
     private fun saveEntry() {
         val htmlContent = richEditor.html ?: ""
-        val imagePaths = imageUris.map { it.toString() } // Save as list of Strings
+        val imagePaths = imageUris.map { uri ->
+            if (uri.scheme == "file") uri.path!! else uri.toString()
+        } // Save as list of Strings
         val title = titleEditText.text.toString()
         val entry = DiaryEntry(
             id = entryId ?: 0,
@@ -167,9 +223,9 @@ class EditEntryActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateDateButtonText(button: Button, calendar: java.util.Calendar) {
+    private fun updateDateChipText(chip: Chip, calendar: java.util.Calendar) {
         val format = java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale.getDefault())
-        button.text = format.format(calendar.time)
+        chip.text = format.format(calendar.time)
     }
 
     private fun createImageUri(): Uri? {
@@ -178,5 +234,20 @@ class EditEntryActivity : AppCompatActivity() {
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         }
         return contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+    }
+
+    private fun copyUriToInternalStorage(uri: Uri): String? {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val file = java.io.File(filesDir, "image_${System.currentTimeMillis()}.jpg")
+            val outputStream = java.io.FileOutputStream(file)
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+            file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 } 
