@@ -23,7 +23,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Rohan"
-        android:textStyle="bold"
         android:textSize="32sp"
         android:textColor="@android:color/black"
         android:gravity="center"
@@ -39,35 +38,9 @@
         android:gravity="center"
         android:layout_marginBottom="16dp"/>
 
-    <Button
-        android:id="@+id/navSettingsButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Settings"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:drawableStart="@drawable/ic_settings"
-        android:gravity="start|center_vertical"
-        android:background="@drawable/rounded_white_box"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="16dp"
-        android:padding="16dp"/>
-
     <View
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
-
-    <TextView
-        android:id="@+id/navVersionInfo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Version 2.6.2\nBuilt By Rohan"
-        android:textColor="@android:color/black"
-        android:textSize="16sp"
-        android:gravity="center"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"/>
 
 </LinearLayout>

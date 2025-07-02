@@ -24,6 +24,14 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.chip.Chip
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
+import android.text.Html
+import android.text.Spannable
+import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
+import android.text.style.StrikethroughSpan
+import android.graphics.Typeface
+import android.content.res.ColorStateList
+import android.widget.LinearLayout
 
 class EditEntryActivity : AppCompatActivity() {
     private lateinit var richEditor: RichEditor
@@ -39,6 +47,11 @@ class EditEntryActivity : AppCompatActivity() {
     private lateinit var imagesRecyclerView: RecyclerView
     private lateinit var imageBlockAdapter: ImageBlockAdapter
     private val imageUris = mutableListOf<Uri>()
+    private lateinit var mainEditText: EditText
+    private var isBoldActive = false
+    private var isItalicActive = false
+    private var isUnderlineActive = false
+    private var isStrikethroughActive = false
 
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -62,19 +75,17 @@ class EditEntryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_entry)
+        mainEditText = findViewById(R.id.mainEditText)
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         toolbar.setNavigationOnClickListener {
             saveEntry()
-            finish()
         }
 
         val toolbarTitle = findViewById<TextView>(R.id.toolbarTitle)
         val datePickerChip = findViewById<Chip>(R.id.datePickerChip)
 
-        richEditor = findViewById(R.id.richEditor)
-        val editorScrollView = findViewById<android.widget.ScrollView>(R.id.editorScrollView)
         titleEditText = findViewById(R.id.titleEditText)
         saveButton = findViewById(R.id.saveButton)
         db = DiaryDatabase.getDatabase(this)
@@ -91,7 +102,8 @@ class EditEntryActivity : AppCompatActivity() {
                 // Load the first entry for editing, or customize as needed
                 val entry = entries[0]
                 titleEditText.setText(entry.title ?: "")
-                richEditor.html = entry.htmlContent ?: ""
+                val plainText = if (entry.htmlContent != null) Html.fromHtml(entry.htmlContent ?: "", Html.FROM_HTML_MODE_LEGACY) else ""
+                mainEditText.setText(plainText)
                 entryId = entry.id
                 imageUris.clear()
                 entry.imagePaths?.forEach { path ->
@@ -100,7 +112,7 @@ class EditEntryActivity : AppCompatActivity() {
                 imageBlockAdapter.notifyDataSetChanged()
             } else {
                 titleEditText.setText("")
-                richEditor.html = ""
+                mainEditText.setText("")
                 entryId = null
                 imageUris.clear()
                 imageBlockAdapter.notifyDataSetChanged()
@@ -151,50 +163,18 @@ class EditEntryActivity : AppCompatActivity() {
             cameraLauncher.launch(photoUri)
         }
 
-        // Formatting buttons
-        val btnBold = findViewById<MaterialButton>(R.id.btnBold)
-        val btnItalic = findViewById<MaterialButton>(R.id.btnItalic)
-        val btnUnderline = findViewById<MaterialButton>(R.id.btnUnderline)
-        val btnStrikethrough = findViewById<MaterialButton>(R.id.btnStrikethrough)
-
-        fun updateFormatButtonColors(button: MaterialButton) {
-            val context = button.context
-            if (button.isChecked) {
-                button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.black)
-                button.setTextColor(ContextCompat.getColor(context, R.color.white))
-            } else {
-                button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.white)
-                button.setTextColor(ContextCompat.getColor(context, R.color.black))
-            }
+        val cardView = findViewById<androidx.cardview.widget.CardView>(R.id.cardView)
+        cardView.setOnClickListener {
+            mainEditText.requestFocus()
+            // Force cursor to the start by resetting the HTML content
+            val currentHtml = mainEditText.text.toString()
+            mainEditText.setText("") // Clear first to reset cursor
+            mainEditText.setText(currentHtml)
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.showSoftInput(mainEditText, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
         }
 
-        btnBold.setOnClickListener {
-            btnBold.isChecked = !btnBold.isChecked
-            updateFormatButtonColors(btnBold)
-            richEditor.setBold()
-        }
-        btnItalic.setOnClickListener {
-            btnItalic.isChecked = !btnItalic.isChecked
-            updateFormatButtonColors(btnItalic)
-            richEditor.setItalic()
-        }
-        btnUnderline.setOnClickListener {
-            btnUnderline.isChecked = !btnUnderline.isChecked
-            updateFormatButtonColors(btnUnderline)
-            richEditor.setUnderline()
-        }
-        btnStrikethrough.setOnClickListener {
-            btnStrikethrough.isChecked = !btnStrikethrough.isChecked
-            updateFormatButtonColors(btnStrikethrough)
-            richEditor.setStrikeThrough()
-        }
-        listOf(btnBold, btnItalic, btnUnderline, btnStrikethrough).forEach { updateFormatButtonColors(it) }
-
-        richEditor.setOnTextChangeListener {
-            editorScrollView.post {
-                editorScrollView.fullScroll(android.view.View.FOCUS_DOWN)
-            }
-        }
+        setupFormatButtons()
     }
 
     override fun onPause() {
@@ -203,18 +183,27 @@ class EditEntryActivity : AppCompatActivity() {
     }
 
     private fun saveEntry() {
-        val htmlContent = richEditor.html ?: ""
+        val htmlContent = Html.toHtml(mainEditText.text, Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE)
         val imagePaths = imageUris.map { uri ->
             if (uri.scheme == "file") uri.path!! else uri.toString()
-        } // Save as list of Strings
+        }
         val title = titleEditText.text.toString()
-        val entry = DiaryEntry(
-            id = entryId ?: 0,
-            date = entryDate,
-            htmlContent = htmlContent,
-            imagePaths = imagePaths,
-            title = title
-        )
+        val entry = if (entryId != null) {
+            DiaryEntry(
+                id = entryId!!,
+                date = entryDate,
+                htmlContent = htmlContent,
+                imagePaths = imagePaths,
+                title = title
+            )
+        } else {
+            DiaryEntry(
+                date = entryDate,
+                htmlContent = htmlContent,
+                imagePaths = imagePaths,
+                title = title
+            )
+        }
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 db.diaryEntryDao().insertOrUpdate(entry)
@@ -248,6 +237,158 @@ class EditEntryActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    private fun setupFormatButtons() {
+        val btnBold = findViewById<MaterialButton>(R.id.btnBold)
+        val btnItalic = findViewById<MaterialButton>(R.id.btnItalic)
+        val btnUnderline = findViewById<MaterialButton>(R.id.btnUnderline)
+        val btnStrikethrough = findViewById<MaterialButton>(R.id.btnStrikethrough)
+
+        btnBold.setOnClickListener {
+            val start = mainEditText.selectionStart
+            val end = mainEditText.selectionEnd
+            if (start == end) {
+                isBoldActive = !isBoldActive
+                updateButtonStyle(btnBold, isBoldActive)
+                Toast.makeText(this, "Bold mode: ${if (isBoldActive) "ON" else "OFF"}", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Bold clicked: selection $start-$end", Toast.LENGTH_SHORT).show()
+                toggleStyle(Typeface.BOLD, btnBold)
+            }
+        }
+        btnItalic.setOnClickListener {
+            val start = mainEditText.selectionStart
+            val end = mainEditText.selectionEnd
+            if (start == end) {
+                isItalicActive = !isItalicActive
+                updateButtonStyle(btnItalic, isItalicActive)
+                Toast.makeText(this, "Italic mode: ${if (isItalicActive) "ON" else "OFF"}", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Italic clicked: selection $start-$end", Toast.LENGTH_SHORT).show()
+                toggleStyle(Typeface.ITALIC, btnItalic)
+            }
+        }
+        btnUnderline.setOnClickListener {
+            val start = mainEditText.selectionStart
+            val end = mainEditText.selectionEnd
+            if (start == end) {
+                isUnderlineActive = !isUnderlineActive
+                updateButtonStyle(btnUnderline, isUnderlineActive)
+                Toast.makeText(this, "Underline mode: ${if (isUnderlineActive) "ON" else "OFF"}", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Underline clicked: selection $start-$end", Toast.LENGTH_SHORT).show()
+                toggleUnderline(btnUnderline)
+            }
+        }
+        btnStrikethrough.setOnClickListener {
+            val start = mainEditText.selectionStart
+            val end = mainEditText.selectionEnd
+            if (start == end) {
+                isStrikethroughActive = !isStrikethroughActive
+                updateButtonStyle(btnStrikethrough, isStrikethroughActive)
+                Toast.makeText(this, "Strikethrough mode: ${if (isStrikethroughActive) "ON" else "OFF"}", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Strikethrough clicked: selection $start-$end", Toast.LENGTH_SHORT).show()
+                toggleStrikethrough(btnStrikethrough)
+            }
+        }
+
+        // Add TextWatcher for formatting mode
+        mainEditText.addTextChangedListener(object : android.text.TextWatcher {
+            private var lastStart = 0
+            private var lastCount = 0
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                lastStart = start
+                lastCount = after
+            }
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                if (lastCount > 0 && s != null) {
+                    val end = lastStart + lastCount
+                    if (isBoldActive) {
+                        s.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), lastStart, end, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
+                    if (isItalicActive) {
+                        s.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.ITALIC), lastStart, end, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
+                    if (isUnderlineActive) {
+                        s.setSpan(android.text.style.UnderlineSpan(), lastStart, end, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
+                    if (isStrikethroughActive) {
+                        s.setSpan(android.text.style.StrikethroughSpan(), lastStart, end, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
+                }
+            }
+        })
+    }
+
+    private fun toggleStyle(style: Int, button: MaterialButton) {
+        val start = mainEditText.selectionStart
+        val end = mainEditText.selectionEnd
+        if (start == end) return // No selection
+
+        val spannable = mainEditText.text as Spannable
+        val spans = spannable.getSpans(start, end, StyleSpan::class.java)
+        var exists = false
+        for (span in spans) {
+            if (span.style == style) {
+                spannable.removeSpan(span)
+                exists = true
+            }
+        }
+        if (!exists) {
+            spannable.setSpan(StyleSpan(style), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        updateButtonStyle(button, !exists)
+    }
+
+    private fun toggleUnderline(button: MaterialButton) {
+        val start = mainEditText.selectionStart
+        val end = mainEditText.selectionEnd
+        if (start == end) return
+
+        val spannable = mainEditText.text as Spannable
+        val spans = spannable.getSpans(start, end, UnderlineSpan::class.java)
+        var exists = false
+        for (span in spans) {
+            spannable.removeSpan(span)
+            exists = true
+        }
+        if (!exists) {
+            spannable.setSpan(UnderlineSpan(), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        updateButtonStyle(button, !exists)
+    }
+
+    private fun toggleStrikethrough(button: MaterialButton) {
+        val start = mainEditText.selectionStart
+        val end = mainEditText.selectionEnd
+        if (start == end) return
+
+        val spannable = mainEditText.text as Spannable
+        val spans = spannable.getSpans(start, end, StrikethroughSpan::class.java)
+        var exists = false
+        for (span in spans) {
+            spannable.removeSpan(span)
+            exists = true
+        }
+        if (!exists) {
+            spannable.setSpan(StrikethroughSpan(), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        updateButtonStyle(button, !exists)
+    }
+
+    private fun updateButtonStyle(button: MaterialButton, isActive: Boolean) {
+        if (isActive) {
+            button.setBackgroundColor(ContextCompat.getColor(this, R.color.black))
+            button.setTextColor(ContextCompat.getColor(this, R.color.white))
+            button.iconTint = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.white))
+        } else {
+            button.setBackgroundColor(ContextCompat.getColor(this, R.color.white))
+            button.setTextColor(ContextCompat.getColor(this, R.color.black))
+            button.iconTint = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.black))
         }
     }
 } 

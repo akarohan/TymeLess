@@ -13,7 +13,8 @@
         android:layout_weight="1"
         app:headerLayout="@layout/nav_header_main"
         app:menu="@menu/activity_main_drawer"
-        android:background="@android:color/white"/>
+        android:background="@android:color/white"
+        app:itemTextColor="@android:color/black"/>
 
     <include layout="@layout/nav_footer_main" />
 

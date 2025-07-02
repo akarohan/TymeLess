@@ -62,7 +62,9 @@ class DiaryEntryAdapter(
             titleText.text = entry.title ?: "(No Title)"
             val sdf = SimpleDateFormat("d MMMM yyyy", Locale.getDefault())
             dateText.text = sdf.format(Date(entry.date))
-            previewText.text = android.text.Html.fromHtml(entry.htmlContent).toString().take(60)
+            // Show a styled preview using Html.fromHtml, truncated to 60 chars
+            val spanned = android.text.Html.fromHtml(entry.htmlContent, android.text.Html.FROM_HTML_MODE_LEGACY)
+            previewText.text = if (spanned.length > 60) spanned.subSequence(0, 60) else spanned
 
             // Bind up to 3 images
             val imageViews = listOf(imageLeft, imageTopRight, imageBottomRight)

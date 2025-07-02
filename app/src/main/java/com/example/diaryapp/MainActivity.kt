@@ -117,40 +117,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         val headerView = navView.getHeaderView(0)
-        val settingsButton = headerView.findViewById<Button>(R.id.navSettingsButton)
-        settingsButton?.setOnClickListener {
-            startActivity(Intent(this, SettingsMainActivity::class.java))
-        }
-
-        // Open right-side navigation drawer when profile icon is tapped
-        val toolbarProfileImageView = binding.appBarMain.toolbar.findViewById<de.hdodenhof.circleimageview.CircleImageView>(R.id.profileImageView)
-        toolbarProfileImageView?.setOnClickListener {
-            drawerLayout.openDrawer(GravityCompat.END)
-        }
-
-        cropImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                val data = result.data
-                val resultUri = UCrop.getOutput(data!!)
-                if (resultUri != null) {
-                    saveProfileImageFromUri(resultUri)
-                }
-            }
-        }
-        pickProfileImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            uri?.let {
-                launchCropper(it)
-            }
-        }
-        takeProfileImageLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success: Boolean ->
-            val file = File(filesDir, "profile_image.jpg")
-            if (success && file.exists() && file.length() > 0) {
-                launchCropper(android.net.Uri.fromFile(file))
-            } else {
-                Toast.makeText(this, "Failed to save photo. Please try again.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
         val profileImageView = headerView.findViewById<ImageView>(R.id.imageView)
         profileImageView?.setOnClickListener {
             val options = arrayOf("Choose a Picture", "Take a Picture", "Remove Picture")
@@ -175,7 +141,7 @@ class MainActivity : AppCompatActivity() {
         // Update toolbar profile icon as well
         val prefsToolbar = getEncryptedPrefs()
         val profilePicUri = prefsToolbar.getString("profile_pic_uri", null)
-        if (profilePicUri != null && toolbarProfileImageView != null) {
+        if (profilePicUri != null && profileImageView != null) {
             val uri = if (profilePicUri.startsWith("/")) {
                 android.net.Uri.fromFile(java.io.File(profilePicUri))
             } else {
@@ -187,9 +153,9 @@ class MainActivity : AppCompatActivity() {
                 .error(R.drawable.ic_user_placeholder)
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .skipMemoryCache(true)
-                .into(toolbarProfileImageView)
-        } else if (toolbarProfileImageView != null) {
-            toolbarProfileImageView.setImageResource(R.drawable.ic_user_placeholder)
+                .into(profileImageView)
+        } else if (profileImageView != null) {
+            profileImageView.setImageResource(R.drawable.ic_user_placeholder)
         }
 
         // Set greeting message below the logo based on time and user name
@@ -197,15 +163,44 @@ class MainActivity : AppCompatActivity() {
         val prefsGreeting = getEncryptedPrefs()
         val userName = prefsGreeting.getString("name", "User") ?: "User"
         greetingTextView?.text = getGreetingMessage(userName)
+
+        cropImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val data = result.data
+                val resultUri = UCrop.getOutput(data!!)
+                if (resultUri != null) {
+                    saveProfileImageFromUri(resultUri)
+                }
+            }
+        }
+        pickProfileImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let {
+                launchCropper(it)
+            }
+        }
+        takeProfileImageLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success: Boolean ->
+            val file = File(filesDir, "profile_image.jpg")
+            if (success && file.exists() && file.length() > 0) {
+                launchCropper(android.net.Uri.fromFile(file))
+            } else {
+                Toast.makeText(this, "Failed to save photo. Please try again.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Set up toolbar profile image to open right-side navigation drawer when tapped
+        val toolbarProfileImageView = binding.appBarMain.toolbar.findViewById<de.hdodenhof.circleimageview.CircleImageView>(R.id.profileImageView)
+        toolbarProfileImageView?.setOnClickListener {
+            binding.drawerLayout.openDrawer(androidx.core.view.GravityCompat.END)
+        }
     }
 
     private fun updateDrawerHeader() {
         val navView: com.google.android.material.navigation.NavigationView = findViewById(R.id.nav_view)
         val headerView = navView.getHeaderView(0)
         if (headerView == null) return
+        val profileImageView = headerView.findViewById<ImageView>(R.id.imageView)
         val nameTextView = headerView.findViewById<TextView>(R.id.navUserName)
         val usernameTextView = headerView.findViewById<TextView>(R.id.navUserUsername)
-        val profileImageView = headerView.findViewById<ImageView>(R.id.imageView)
         val prefs = EncryptedSharedPreferences.create(
             "diary_auth_prefs",
             MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC),
@@ -215,13 +210,10 @@ class MainActivity : AppCompatActivity() {
         )
         val loadedName = prefs.getString("name", "User")
         val loadedUsername = prefs.getString("username", "username")
-        val profilePicUri = prefs.getString("profile_pic_uri", null)
-        Log.d("DrawerHeader", "Loaded name: $loadedName, username: $loadedUsername, profilePicUri: $profilePicUri")
         nameTextView?.text = loadedName
         usernameTextView?.text = loadedUsername
-        nameTextView?.setTextColor(android.graphics.Color.WHITE)
-        usernameTextView?.setTextColor(android.graphics.Color.WHITE)
-        (nameTextView?.parent as? View)?.setBackgroundColor(android.graphics.Color.BLACK)
+        val profilePicUri = prefs.getString("profile_pic_uri", null)
+        Log.d("DrawerHeader", "profilePicUri: $profilePicUri")
         if (profilePicUri != null && profileImageView != null) {
             val uri = if (profilePicUri.startsWith("/")) {
                 android.net.Uri.fromFile(java.io.File(profilePicUri))
@@ -265,6 +257,26 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updateDrawerHeader()
+        // Update toolbar profile image on resume
+        val toolbarProfileImageView = binding.appBarMain.toolbar.findViewById<de.hdodenhof.circleimageview.CircleImageView>(R.id.profileImageView)
+        val prefsToolbar = getEncryptedPrefs()
+        val profilePicUri = prefsToolbar.getString("profile_pic_uri", null)
+        if (profilePicUri != null && toolbarProfileImageView != null) {
+            val uri = if (profilePicUri.startsWith("/")) {
+                android.net.Uri.fromFile(java.io.File(profilePicUri))
+            } else {
+                android.net.Uri.parse(profilePicUri)
+            }
+            Glide.with(this)
+                .load(uri)
+                .placeholder(R.drawable.ic_user_placeholder)
+                .error(R.drawable.ic_user_placeholder)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .into(toolbarProfileImageView)
+        } else if (toolbarProfileImageView != null) {
+            toolbarProfileImageView.setImageResource(R.drawable.ic_user_placeholder)
+        }
         // Update greeting message on resume
         val greetingTextView = binding.appBarMain.toolbar.findViewById<TextView>(R.id.greeting)
         val prefsGreeting = getEncryptedPrefs()
@@ -309,6 +321,26 @@ class MainActivity : AppCompatActivity() {
             val prefs = getEncryptedPrefs()
             prefs.edit().putString("profile_pic_uri", file.absolutePath).apply()
             updateDrawerHeader()
+
+            // Update toolbar/home header profile image
+            val toolbarProfileImageView = binding.appBarMain.toolbar.findViewById<de.hdodenhof.circleimageview.CircleImageView>(R.id.profileImageView)
+            val profilePicUri = prefs.getString("profile_pic_uri", null)
+            if (profilePicUri != null && toolbarProfileImageView != null) {
+                val uri = if (profilePicUri.startsWith("/")) {
+                    android.net.Uri.fromFile(java.io.File(profilePicUri))
+                } else {
+                    android.net.Uri.parse(profilePicUri)
+                }
+                Glide.with(this)
+                    .load(uri)
+                    .placeholder(R.drawable.ic_user_placeholder)
+                    .error(R.drawable.ic_user_placeholder)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(toolbarProfileImageView)
+            } else if (toolbarProfileImageView != null) {
+                toolbarProfileImageView.setImageResource(R.drawable.ic_user_placeholder)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

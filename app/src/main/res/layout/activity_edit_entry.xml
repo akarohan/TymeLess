@@ -35,7 +35,6 @@
                     android:text="Edit"
                     android:textColor="@color/black"
                     android:textSize="20sp"
-                    android:textStyle="bold"
                     android:gravity="start|center_vertical"
                     android:layout_marginEnd="16dp"/>
 
@@ -82,6 +81,7 @@
         android:layout_marginBottom="8dp"/>
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:cardCornerRadius="16dp"
@@ -116,15 +116,20 @@
                     android:overScrollMode="never"
                     android:scrollbars="vertical"/>
 
-                <jp.wasabeef.richeditor.RichEditor
-                    android:id="@+id/richEditor"
+                <EditText
+                    android:id="@+id/mainEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="24dp"
-                    android:textColor="@color/black"
                     android:hint="Content Here"
+                    android:textColor="@color/black"
+                    android:background="@android:color/transparent"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:gravity="top|start"
+                    android:padding="24dp"
                     android:overScrollMode="ifContentScrolls"
-                    android:scrollbars="vertical"/>
+                    android:scrollbars="vertical"
+                    android:minLines="10"
+                    android:maxLines="100"/>
 
                 <View
                     android:layout_width="match_parent"
@@ -144,66 +149,66 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="16dp">
 
-        <!-- Formatting bar row -->
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/formatToggleGroup"
+        <!-- Formatting buttons bar -->
+        <LinearLayout
+            android:id="@+id/formatBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:singleSelection="false"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="8dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnBold"
-                style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="B"
-                android:textStyle="bold"
-                app:backgroundTint="@color/format_button_bg"
-                android:textColor="@color/format_button_text"
+                android:backgroundTint="@color/white"
+                android:textColor="@color/black"
+                app:icon="@drawable/ic_format_bold"
+                app:iconTint="@color/black"
                 app:cornerRadius="24dp"
-                android:checkable="true"/>
+                android:contentDescription="Bold"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnItalic"
-                style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="I"
-                android:textStyle="italic"
-                app:backgroundTint="@color/format_button_bg"
-                android:textColor="@color/format_button_text"
+                android:backgroundTint="@color/white"
+                android:textColor="@color/black"
+                app:icon="@drawable/ic_format_italic"
+                app:iconTint="@color/black"
                 app:cornerRadius="24dp"
-                android:checkable="true"/>
+                android:layout_marginStart="8dp"
+                android:contentDescription="Italic"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUnderline"
-                style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="U"
-                android:textStyle="italic"
-                app:backgroundTint="@color/format_button_bg"
-                android:textColor="@color/format_button_text"
+                android:backgroundTint="@color/white"
+                android:textColor="@color/black"
+                app:icon="@drawable/ic_format_underlined"
+                app:iconTint="@color/black"
                 app:cornerRadius="24dp"
-                android:checkable="true"/>
+                android:layout_marginStart="8dp"
+                android:contentDescription="Underline"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnStrikethrough"
-                style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="S"
-                android:textStyle="italic"
-                app:backgroundTint="@color/format_button_bg"
-                android:textColor="@color/format_button_text"
+                android:backgroundTint="@color/white"
+                android:textColor="@color/black"
+                app:icon="@drawable/ic_format_strikethrough"
+                app:iconTint="@color/black"
                 app:cornerRadius="24dp"
-                android:checkable="true"/>
-        </com.google.android.material.button.MaterialButtonToggleGroup>
+                android:layout_marginStart="8dp"
+                android:contentDescription="Strikethrough"/>
+        </LinearLayout>
 
         <!-- Bottom row: gallery, camera, save -->
         <LinearLayout

@@ -22,7 +22,6 @@
         android:layout_height="wrap_content"
         android:text="Built by Rohan"
         android:textColor="#222222"
-        android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:textSize="16sp"/>
 </LinearLayout> 
