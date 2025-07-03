@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="60dp"
+    android:background="@drawable/bg_audio_chip_pill">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="12dp">
+
+        <!-- Mic icon in white circle, clickable for play/pause -->
+        <FrameLayout
+            android:id="@+id/audioPlayArea"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/circle_white_bg"
+            android:layout_marginEnd="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:id="@+id/audioIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_mic_filled"
+                android:tint="#222222"
+                android:layout_gravity="center"
+                android:contentDescription="Audio icon"/>
+        </FrameLayout>
+
+        <!-- Waveform -->
+        <ImageView
+            android:id="@+id/audioWaveform"
+            android:layout_width="48dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_waveform"
+            android:tint="#222222"
+            android:contentDescription="Waveform"
+            android:layout_marginEnd="12dp"/>
+
+        <!-- Duration -->
+        <TextView
+            android:id="@+id/audioDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#222222"
+            android:textSize="15sp"
+            android:layout_marginEnd="8dp"/>
+    </LinearLayout>
+
+    <!-- Delete (X) button in top right -->
+    <ImageButton
+        android:id="@+id/audioDelete"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        android:tint="#888888"
+        android:contentDescription="Delete audio"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_gravity="top|end"
+        android:layout_margin="2dp"/>
+
+</FrameLayout> 

@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp" android:height="36dp" android:viewportWidth="36" android:viewportHeight="36">
+    <!-- Outer black circle -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M18 2C9.72 2 2.99 8.73 2.99 17.01S9.72 32.02 18 32.02 33.01 25.29 33.01 17.01 26.28 2 18 2z"/>
+    <!-- Inner white square -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12 12h12v12H12z"/>
+</vector> 

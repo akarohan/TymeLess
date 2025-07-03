@@ -65,6 +65,7 @@ class EditEntryActivity : AppCompatActivity() {
     private var isRecording = false
     private val audioPaths = mutableListOf<String>()
     private val REQUEST_RECORD_AUDIO_PERMISSION = 2001
+    private val REQUEST_CAMERA_PERMISSION = 2002
     private lateinit var audioRecyclerView: androidx.recyclerview.widget.RecyclerView
     private lateinit var audioChipAdapter: AudioChipAdapter
     private var mediaPlayer: MediaPlayer? = null
@@ -100,7 +101,8 @@ class EditEntryActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         toolbar.setNavigationOnClickListener {
-            saveEntry()
+            wasManuallySaved = true
+            saveEntry(autoSave = false)
         }
 
         val toolbarTitle = findViewById<TextView>(R.id.toolbarTitle)
@@ -170,7 +172,7 @@ class EditEntryActivity : AppCompatActivity() {
         wasManuallySaved = false // Reset when activity starts or loads a new entry
         saveButton.setOnClickListener {
             wasManuallySaved = true
-            saveEntry()
+            saveEntry(autoSave = false)
         }
 
         btnGallery = findViewById(R.id.btnGallery)
@@ -189,9 +191,17 @@ class EditEntryActivity : AppCompatActivity() {
         }
 
         btnCamera.setOnClickListener {
-            val photoUri = createImageUri()
-            imageUri = photoUri
-            cameraLauncher.launch(photoUri)
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA_PERMISSION)
+            } else {
+                val photoUri = createImageUri()
+                if (photoUri != null) {
+                    imageUri = photoUri
+                    cameraLauncher.launch(photoUri)
+                } else {
+                    Toast.makeText(this, "Failed to create image file", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         val cardView = findViewById<androidx.cardview.widget.CardView>(R.id.cardView)
@@ -232,19 +242,19 @@ class EditEntryActivity : AppCompatActivity() {
             onPlayPause = { item, position -> handlePlayPause(item, position) },
             onDelete = { item, position -> handleDeleteAudio(item, position) }
         )
-        audioRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        audioRecyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         audioRecyclerView.adapter = audioChipAdapter
     }
 
     override fun onPause() {
         super.onPause()
         if (!wasManuallySaved && shouldSaveEntry()) {
-            saveEntry()
+            saveEntry(autoSave = true)
         }
         wasManuallySaved = false // Reset for next time
     }
 
-    private fun saveEntry() {
+    private fun saveEntry(autoSave: Boolean = false) {
         val title = titleEditText.text.toString().trim()
         val content = mainEditText.text.toString().trim()
         if (title.isEmpty() && content.isEmpty()) {
@@ -276,8 +286,10 @@ class EditEntryActivity : AppCompatActivity() {
             withContext(Dispatchers.IO) {
                 db.diaryEntryDao().insertOrUpdate(entry)
             }
-            android.widget.Toast.makeText(this@EditEntryActivity, "Entry saved", android.widget.Toast.LENGTH_SHORT).show()
-            finish()
+            if (!autoSave) {
+                android.widget.Toast.makeText(this@EditEntryActivity, "Entry saved", android.widget.Toast.LENGTH_SHORT).show()
+                finish()
+            }
         }
     }
 
@@ -560,14 +572,12 @@ class EditEntryActivity : AppCompatActivity() {
     }
 
     private fun handleDeleteAudio(item: AudioItem, position: Int) {
-        stopAudioPlayback()
-        // Delete file from storage
-        try {
-            val file = java.io.File(item.filePath)
-            if (file.exists()) file.delete()
-        } catch (_: Exception) {}
-        audioItems.removeAt(position)
-        audioChipAdapter.notifyItemRemoved(position)
+        if (position >= 0 && position < audioItems.size) {
+            audioItems.removeAt(position)
+            audioChipAdapter.notifyItemRemoved(position)
+        } else {
+            android.util.Log.w("EditEntryActivity", "Attempted to remove audio at invalid position: $position")
+        }
     }
 
     private fun getAudioDurationFormatted(filePath: String): String {
@@ -596,6 +606,18 @@ class EditEntryActivity : AppCompatActivity() {
                 startRecording()
             } else {
                 Toast.makeText(this, "Microphone permission denied", Toast.LENGTH_SHORT).show()
+            }
+        } else if (requestCode == REQUEST_CAMERA_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                val photoUri = createImageUri()
+                if (photoUri != null) {
+                    imageUri = photoUri
+                    cameraLauncher.launch(photoUri)
+                } else {
+                    Toast.makeText(this, "Failed to create image file", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show()
             }
         }
     }
