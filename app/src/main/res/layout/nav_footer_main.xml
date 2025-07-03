@@ -23,5 +23,6 @@
         android:text="Built by Rohan"
         android:textColor="#222222"
         android:fontFamily="sans-serif-medium"
-        android:textSize="16sp"/>
+        android:textSize="16sp"
+        android:textStyle="bold"/>
 </LinearLayout> 

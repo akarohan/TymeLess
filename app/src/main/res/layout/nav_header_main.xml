@@ -1,46 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/side_nav_bar"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:layout_height="300dp">
 
-    <de.hdodenhof.circleimageview.CircleImageView
-        android:id="@+id/imageView"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:contentDescription="@string/nav_header_desc"
-        android:layout_marginBottom="16dp"
-        app:civ_border_width="3dp"
-        app:civ_border_color="@android:color/white"
-        android:src="@drawable/ic_user_placeholder"/>
+    <!-- Blurred background -->
+    <ImageView
+        android:id="@+id/blurredBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="Blurred cover"/>
 
-    <TextView
-        android:id="@+id/navUserName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Rohan"
-        android:textSize="32sp"
-        android:textColor="@android:color/black"
-        android:gravity="center"
-        android:layout_marginTop="8dp"/>
+    <!-- Camera icon for cover (top right) -->
+    <ImageButton
+        android:id="@+id/coverCameraButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="12dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_menu_camera"
+        android:contentDescription="Change cover photo"/>
 
-    <TextView
-        android:id="@+id/navUserUsername"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="realrohan"
-        android:textColor="@android:color/black"
-        android:textSize="18sp"
-        android:gravity="center"
-        android:layout_marginBottom="16dp"/>
-
+    <!-- Gradient overlay -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_height="match_parent"
+        android:background="@drawable/gradient_bottom_to_white"/>
 
-</LinearLayout>
+    <!-- Profile content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingTop="32dp">
+
+        <FrameLayout
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:elevation="8dp">
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/imageView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_user_placeholder"
+                app:civ_border_width="1dp"
+                app:civ_border_color="@android:color/black"
+                android:layout_gravity="center"/>
+            <ImageButton
+                android:id="@+id/profileCameraButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="-4dp"
+                android:layout_marginBottom="-6dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_menu_camera"
+                android:contentDescription="Change profile photo"/>
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/navUserName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rohan"
+            android:textSize="32sp"
+            android:textColor="@android:color/black"
+            android:gravity="center"
+            android:layout_marginTop="8dp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/navUserUsername"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="realrohan"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:layout_marginBottom="16dp"/>
+    </LinearLayout>
+</FrameLayout>

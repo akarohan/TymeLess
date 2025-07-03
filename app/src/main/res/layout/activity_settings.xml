@@ -18,14 +18,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/greyback"
-            app:navigationIcon="@android:drawable/ic_menu_revert">
+            >
 
             <TextView
                 android:id="@+id/toolbarTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Security"
-                android:textColor="@color/white"
+                android:textColor="@color/black"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:gravity="center_vertical"/>
@@ -37,7 +37,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="Name"
-        android:textColor="@color/white"
+        android:textColor="@color/black"
         android:textColorHint="#AAAAAA"
         android:backgroundTint="@color/white"
         app:layout_constraintTop_toBottomOf="@id/appBarLayout"
@@ -52,7 +52,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="Username"
-        android:textColor="@color/white"
+        android:textColor="@color/black"
         android:textColorHint="#AAAAAA"
         android:backgroundTint="@color/white"
         app:layout_constraintTop_toBottomOf="@id/nameInput"
@@ -68,7 +68,7 @@
         android:layout_height="wrap_content"
         android:hint="New Password (leave blank to keep current)"
         android:inputType="textPassword"
-        android:textColor="@color/white"
+        android:textColor="@color/black"
         android:textColorHint="#AAAAAA"
         android:backgroundTint="@color/white"
         app:layout_constraintTop_toBottomOf="@id/usernameInput"
