@@ -63,6 +63,7 @@ android {
         versionName = "$major.$minor.$patch"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
@@ -123,4 +124,6 @@ dependencies {
     implementation("de.hdodenhof:circleimageview:3.1.0")
 
     implementation("com.github.yalantis:ucrop:2.2.8")
+
+    implementation("com.google.code.gson:gson:2.10.1")
 }

@@ -28,8 +28,7 @@ class AudioChipAdapter(
     override fun getItemCount(): Int = audioList.size
 
     inner class AudioViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val playArea: View = itemView.findViewById(R.id.audioPlayArea)
-        private val icon: ImageView = itemView.findViewById(R.id.audioIcon)
+        private val icon: ImageButton = itemView.findViewById(R.id.audioIcon)
         private val waveform: ImageView = itemView.findViewById(R.id.audioWaveform)
         private val duration: TextView = itemView.findViewById(R.id.audioDuration)
         private val delete: ImageButton = itemView.findViewById(R.id.audioDelete)
@@ -38,14 +37,13 @@ class AudioChipAdapter(
             duration.text = item.duration
             // Set icon and background based on play state
             if (item.isPlaying) {
-                playArea.setBackgroundResource(R.drawable.ic_stop_circle_white)
-                icon.setImageDrawable(null)
+                icon.setImageResource(R.drawable.ic_stop_circle_white)
+                icon.clearColorFilter()
             } else {
-                playArea.setBackgroundResource(R.drawable.circle_white_bg)
                 icon.setImageResource(R.drawable.ic_mic_filled)
                 icon.setColorFilter(ContextCompat.getColor(itemView.context, android.R.color.black))
             }
-            playArea.setOnClickListener { onPlayPause(item, adapterPosition) }
+            icon.setOnClickListener { onPlayPause(item, adapterPosition) }
             delete.setOnClickListener {
                 val pos = adapterPosition
                 if (pos != RecyclerView.NO_POSITION) {

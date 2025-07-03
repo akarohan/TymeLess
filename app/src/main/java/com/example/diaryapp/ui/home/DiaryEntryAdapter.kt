@@ -97,6 +97,20 @@ class DiaryEntryAdapter(
                 }
             }
             imagesRow.visibility = if (hasImage) View.VISIBLE else View.GONE
+
+            // Audio chip logic: only show if there is at least one audio item
+            val audioChip = itemView.findViewById<View>(com.example.diaryapp.R.id.audioChipPreview)
+            val audioDuration = itemView.findViewById<TextView>(com.example.diaryapp.R.id.audioDuration)
+            val audioDelete = itemView.findViewById<ImageButton>(com.example.diaryapp.R.id.audioDelete)
+            val firstAudio = entry.audioList.firstOrNull()
+            if (firstAudio != null) {
+                audioChip?.visibility = View.VISIBLE
+                audioDuration?.text = firstAudio.duration
+            } else {
+                audioChip?.visibility = View.GONE
+            }
+            // Hide the delete button on the audio chip preview (if present)
+            audioDelete?.visibility = View.GONE
         }
     }
 } 
