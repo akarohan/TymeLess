@@ -116,6 +116,15 @@
                     android:overScrollMode="never"
                     android:scrollbars="vertical"/>
 
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/audioRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:overScrollMode="never"
+                    android:scrollbars="horizontal"/>
+
                 <EditText
                     android:id="@+id/mainEditText"
                     android:layout_width="match_parent"
@@ -153,7 +162,7 @@
         <LinearLayout
             android:id="@+id/formatBar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:orientation="horizontal"
             android:gravity="center"
             android:layout_marginBottom="8dp">
@@ -161,56 +170,68 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnBold"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
                 android:backgroundTint="@color/white"
                 android:textColor="@color/black"
-                app:icon="@drawable/ic_format_bold"
-                app:iconTint="@color/black"
-                app:cornerRadius="24dp"
+                android:text="B"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                app:cornerRadius="12dp"
+                android:gravity="center"
                 android:contentDescription="Bold"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnItalic"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
                 android:backgroundTint="@color/white"
                 android:textColor="@color/black"
-                app:icon="@drawable/ic_format_italic"
-                app:iconTint="@color/black"
-                app:cornerRadius="24dp"
-                android:layout_marginStart="8dp"
+                android:text="I"
+                android:textStyle="italic"
+                android:textSize="20sp"
+                app:cornerRadius="12dp"
+                android:gravity="center"
                 android:contentDescription="Italic"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUnderline"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
                 android:backgroundTint="@color/white"
                 android:textColor="@color/black"
-                app:icon="@drawable/ic_format_underlined"
-                app:iconTint="@color/black"
-                app:cornerRadius="24dp"
-                android:layout_marginStart="8dp"
+                android:text="U"
+                android:textStyle="normal"
+                android:textSize="20sp"
+                app:cornerRadius="12dp"
+                android:gravity="center"
                 android:contentDescription="Underline"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnStrikethrough"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:backgroundTint="@color/white"
                 android:textColor="@color/black"
-                app:icon="@drawable/ic_format_strikethrough"
-                app:iconTint="@color/black"
-                app:cornerRadius="24dp"
-                android:layout_marginStart="8dp"
+                android:text="S"
+                android:textStyle="normal"
+                android:textSize="20sp"
+                app:cornerRadius="12dp"
+                android:gravity="center"
                 android:contentDescription="Strikethrough"/>
         </LinearLayout>
 
-        <!-- Bottom row: gallery, camera, save -->
+        <!-- Bottom row: gallery, camera, mic, save -->
         <LinearLayout
             android:id="@+id/bottomBar"
             android:layout_width="match_parent"
@@ -225,7 +246,6 @@
                 android:layout_height="48dp"
                 android:background="@drawable/circle_white_bg"
                 android:src="@drawable/ic_menu_gallery"
-                android:tint="@color/black"
                 android:contentDescription="Add from gallery"
                 android:layout_marginEnd="8dp"/>
 
@@ -235,8 +255,16 @@
                 android:layout_height="48dp"
                 android:background="@drawable/circle_white_bg"
                 android:src="@drawable/ic_menu_camera"
-                android:tint="@color/black"
                 android:contentDescription="Take photo"
+                android:layout_marginEnd="8dp"/>
+
+            <ImageButton
+                android:id="@+id/btnMic"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/circle_white_bg"
+                android:src="@drawable/ic_mic_filled"
+                android:contentDescription="Record audio"
                 android:layout_marginEnd="8dp"/>
 
             <Button

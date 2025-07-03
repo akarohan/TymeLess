@@ -14,20 +14,19 @@
         <ImageView
             android:id="@+id/imageView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="100dp"
-            android:maxHeight="220dp"
-            android:adjustViewBounds="true"
-            android:scaleType="centerCrop" />
+            android:layout_height="120dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="Image"/>
 
         <ImageButton
-            android:id="@+id/btnRemove"
+            android:id="@+id/imageDelete"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_gravity="top|end"
-            android:background="@android:color/transparent"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:tint="@android:color/white"
-            android:padding="2dp"/>
+            android:tint="#888888"
+            android:contentDescription="Delete image"
+            android:layout_gravity="top|end"
+            android:layout_margin="2dp"/>
     </FrameLayout>
 </androidx.cardview.widget.CardView> 

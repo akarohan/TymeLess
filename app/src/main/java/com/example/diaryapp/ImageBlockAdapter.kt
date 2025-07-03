@@ -24,7 +24,7 @@ class ImageBlockAdapter(
     override fun onBindViewHolder(holder: ImageBlockViewHolder, position: Int) {
         val uri = imageUris[position]
         holder.bind(uri)
-        holder.btnRemove.setOnClickListener {
+        holder.imageDelete.setOnClickListener {
             onRemove(position)
         }
     }
@@ -33,7 +33,7 @@ class ImageBlockAdapter(
 
     class ImageBlockViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val imageView: ImageView = itemView.findViewById(R.id.imageView)
-        val btnRemove: ImageButton = itemView.findViewById(R.id.btnRemove)
+        val imageDelete: ImageButton = itemView.findViewById(R.id.imageDelete)
         fun bind(uri: Uri) {
             val finalUri = if (uri.scheme == null || uri.scheme == "file") {
                 // If the Uri is a file path or has no scheme, use fromFile

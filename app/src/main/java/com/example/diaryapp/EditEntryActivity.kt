@@ -32,6 +32,15 @@ import android.text.style.StrikethroughSpan
 import android.graphics.Typeface
 import android.content.res.ColorStateList
 import android.widget.LinearLayout
+import android.Manifest
+import android.content.pm.PackageManager
+import android.media.MediaRecorder
+import androidx.core.app.ActivityCompat
+import java.io.File
+import com.example.diaryapp.ImageBlockAdapter
+import com.example.diaryapp.AudioChipAdapter
+import com.example.diaryapp.AudioItem
+import android.media.MediaPlayer
 
 class EditEntryActivity : AppCompatActivity() {
     private lateinit var richEditor: RichEditor
@@ -46,12 +55,23 @@ class EditEntryActivity : AppCompatActivity() {
     private var imageUri: Uri? = null
     private lateinit var imagesRecyclerView: RecyclerView
     private lateinit var imageBlockAdapter: ImageBlockAdapter
-    private val imageUris = mutableListOf<Uri>()
     private lateinit var mainEditText: EditText
     private var isBoldActive = false
     private var isItalicActive = false
     private var isUnderlineActive = false
     private var isStrikethroughActive = false
+    private var wasManuallySaved = false
+    private var audioRecorder: MediaRecorder? = null
+    private var isRecording = false
+    private val audioPaths = mutableListOf<String>()
+    private val REQUEST_RECORD_AUDIO_PERMISSION = 2001
+    private lateinit var audioRecyclerView: androidx.recyclerview.widget.RecyclerView
+    private lateinit var audioChipAdapter: AudioChipAdapter
+    private var mediaPlayer: MediaPlayer? = null
+    private var currentlyPlayingIndex: Int? = null
+    private lateinit var btnMic: ImageButton
+    private val imageUris = mutableListOf<Uri>()
+    private val audioItems = mutableListOf<AudioItem>()
 
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -106,16 +126,25 @@ class EditEntryActivity : AppCompatActivity() {
                 mainEditText.setText(plainText)
                 entryId = entry.id
                 imageUris.clear()
+                audioItems.clear()
                 entry.imagePaths?.forEach { path ->
-                    imageUris.add(android.net.Uri.parse(path))
+                    if (path.endsWith(".3gp")) {
+                        val duration = getAudioDurationFormatted(path)
+                        audioItems.add(AudioItem(path, duration))
+                    } else {
+                        imageUris.add(android.net.Uri.parse(path))
+                    }
                 }
                 imageBlockAdapter.notifyDataSetChanged()
+                audioChipAdapter.notifyDataSetChanged()
             } else {
                 titleEditText.setText("")
                 mainEditText.setText("")
                 entryId = null
                 imageUris.clear()
+                audioItems.clear()
                 imageBlockAdapter.notifyDataSetChanged()
+                audioChipAdapter.notifyDataSetChanged()
             }
         }
 
@@ -138,7 +167,9 @@ class EditEntryActivity : AppCompatActivity() {
             datePickerDialog.show()
         }
 
+        wasManuallySaved = false // Reset when activity starts or loads a new entry
         saveButton.setOnClickListener {
+            wasManuallySaved = true
             saveEntry()
         }
 
@@ -175,32 +206,69 @@ class EditEntryActivity : AppCompatActivity() {
         }
 
         setupFormatButtons()
+
+        val btnUnderline = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnUnderline)
+        btnUnderline.paintFlags = btnUnderline.paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+        val btnStrikethrough = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnStrikethrough)
+        btnStrikethrough.paintFlags = btnStrikethrough.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+
+        btnMic = findViewById(R.id.btnMic)
+        btnMic.setColorFilter(ContextCompat.getColor(this, R.color.black)) // Set initial color
+        
+        btnMic.setOnClickListener {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_RECORD_AUDIO_PERMISSION)
+            } else {
+                if (isRecording) {
+                    stopRecording()
+                } else {
+                    startRecording()
+                }
+            }
+        }
+
+        audioRecyclerView = findViewById(R.id.audioRecyclerView)
+        audioChipAdapter = AudioChipAdapter(audioItems,
+            onPlayPause = { item, position -> handlePlayPause(item, position) },
+            onDelete = { item, position -> handleDeleteAudio(item, position) }
+        )
+        audioRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        audioRecyclerView.adapter = audioChipAdapter
     }
 
     override fun onPause() {
         super.onPause()
-        saveEntry()
+        if (!wasManuallySaved && shouldSaveEntry()) {
+            saveEntry()
+        }
+        wasManuallySaved = false // Reset for next time
     }
 
     private fun saveEntry() {
+        val title = titleEditText.text.toString().trim()
+        val content = mainEditText.text.toString().trim()
+        if (title.isEmpty() && content.isEmpty()) {
+            // Do not save empty entries
+            return
+        }
         val htmlContent = Html.toHtml(mainEditText.text, Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE)
         val imagePaths = imageUris.map { uri ->
             if (uri.scheme == "file") uri.path!! else uri.toString()
         }
-        val title = titleEditText.text.toString()
+        val audioPaths = audioItems.map { it.filePath }
         val entry = if (entryId != null) {
             DiaryEntry(
                 id = entryId!!,
                 date = entryDate,
                 htmlContent = htmlContent,
-                imagePaths = imagePaths,
+                imagePaths = imagePaths + audioPaths,
                 title = title
             )
         } else {
             DiaryEntry(
                 date = entryDate,
                 htmlContent = htmlContent,
-                imagePaths = imagePaths,
+                imagePaths = imagePaths + audioPaths,
                 title = title
             )
         }
@@ -209,6 +277,7 @@ class EditEntryActivity : AppCompatActivity() {
                 db.diaryEntryDao().insertOrUpdate(entry)
             }
             android.widget.Toast.makeText(this@EditEntryActivity, "Entry saved", android.widget.Toast.LENGTH_SHORT).show()
+            finish()
         }
     }
 
@@ -252,9 +321,7 @@ class EditEntryActivity : AppCompatActivity() {
             if (start == end) {
                 isBoldActive = !isBoldActive
                 updateButtonStyle(btnBold, isBoldActive)
-                Toast.makeText(this, "Bold mode: ${if (isBoldActive) "ON" else "OFF"}", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Bold clicked: selection $start-$end", Toast.LENGTH_SHORT).show()
                 toggleStyle(Typeface.BOLD, btnBold)
             }
         }
@@ -264,9 +331,7 @@ class EditEntryActivity : AppCompatActivity() {
             if (start == end) {
                 isItalicActive = !isItalicActive
                 updateButtonStyle(btnItalic, isItalicActive)
-                Toast.makeText(this, "Italic mode: ${if (isItalicActive) "ON" else "OFF"}", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Italic clicked: selection $start-$end", Toast.LENGTH_SHORT).show()
                 toggleStyle(Typeface.ITALIC, btnItalic)
             }
         }
@@ -276,9 +341,7 @@ class EditEntryActivity : AppCompatActivity() {
             if (start == end) {
                 isUnderlineActive = !isUnderlineActive
                 updateButtonStyle(btnUnderline, isUnderlineActive)
-                Toast.makeText(this, "Underline mode: ${if (isUnderlineActive) "ON" else "OFF"}", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Underline clicked: selection $start-$end", Toast.LENGTH_SHORT).show()
                 toggleUnderline(btnUnderline)
             }
         }
@@ -288,9 +351,7 @@ class EditEntryActivity : AppCompatActivity() {
             if (start == end) {
                 isStrikethroughActive = !isStrikethroughActive
                 updateButtonStyle(btnStrikethrough, isStrikethroughActive)
-                Toast.makeText(this, "Strikethrough mode: ${if (isStrikethroughActive) "ON" else "OFF"}", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Strikethrough clicked: selection $start-$end", Toast.LENGTH_SHORT).show()
                 toggleStrikethrough(btnStrikethrough)
             }
         }
@@ -389,6 +450,153 @@ class EditEntryActivity : AppCompatActivity() {
             button.setBackgroundColor(ContextCompat.getColor(this, R.color.white))
             button.setTextColor(ContextCompat.getColor(this, R.color.black))
             button.iconTint = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.black))
+        }
+    }
+
+    private fun shouldSaveEntry(): Boolean {
+        val title = titleEditText.text.toString().trim()
+        val content = mainEditText.text.toString().trim()
+        return title.isNotEmpty() || content.isNotEmpty()
+    }
+
+    private fun setMicButtonRecordingState(isRecording: Boolean) {
+        if (isRecording) {
+            btnMic.background.setTint(ContextCompat.getColor(this, R.color.black))
+            btnMic.setImageResource(R.drawable.ic_stop_circle_red)
+            btnMic.clearColorFilter() // No filter, icon is already colored
+        } else {
+            btnMic.background.setTint(ContextCompat.getColor(this, R.color.white))
+            btnMic.setImageResource(R.drawable.ic_mic_filled)
+            btnMic.setColorFilter(ContextCompat.getColor(this, R.color.black))
+        }
+    }
+
+    private fun startRecording() {
+        val audioFile = File(filesDir, "audio_${System.currentTimeMillis()}.3gp")
+        audioRecorder = MediaRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+            setOutputFile(audioFile.absolutePath)
+            try {
+                prepare()
+                start()
+                isRecording = true
+                setMicButtonRecordingState(true)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun stopRecording() {
+        try {
+            audioRecorder?.apply {
+                stop()
+                release()
+            }
+            audioRecorder = null
+            isRecording = false
+            setMicButtonRecordingState(false)
+            // Save the audio file path
+            val audioFile = File(filesDir, getLastAudioFileName())
+            addAudioItem(audioFile.absolutePath)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun getLastAudioFileName(): String {
+        val files = filesDir.listFiles { file -> file.name.startsWith("audio_") && file.name.endsWith(".3gp") }
+        return files?.maxByOrNull { it.lastModified() }?.name ?: ""
+    }
+
+    private fun addAudioItem(filePath: String) {
+        val duration = getAudioDurationFormatted(filePath)
+        audioItems.add(AudioItem(filePath, duration))
+        audioChipAdapter.notifyItemInserted(audioItems.size - 1)
+        audioPaths.add(filePath)
+    }
+
+    private fun handlePlayPause(item: AudioItem, position: Int) {
+        if (item.isPlaying) {
+            stopAudioPlayback()
+        } else {
+            playAudio(item, position)
+        }
+    }
+
+    private fun playAudio(item: AudioItem, position: Int) {
+        stopAudioPlayback()
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(item.filePath)
+            prepare()
+            start()
+            setOnCompletionListener {
+                item.isPlaying = false
+                audioChipAdapter.notifyItemChanged(position)
+                currentlyPlayingIndex = null
+            }
+        }
+        item.isPlaying = true
+        audioChipAdapter.notifyItemChanged(position)
+        currentlyPlayingIndex = position
+    }
+
+    private fun stopAudioPlayback() {
+        currentlyPlayingIndex?.let { idx ->
+            if (idx in audioItems.indices) {
+                val item = audioItems[idx]
+                if (item is AudioItem) {
+                    item.isPlaying = false
+                    audioChipAdapter.notifyItemChanged(idx)
+                }
+            }
+        }
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
+        currentlyPlayingIndex = null
+    }
+
+    private fun handleDeleteAudio(item: AudioItem, position: Int) {
+        stopAudioPlayback()
+        // Delete file from storage
+        try {
+            val file = java.io.File(item.filePath)
+            if (file.exists()) file.delete()
+        } catch (_: Exception) {}
+        audioItems.removeAt(position)
+        audioChipAdapter.notifyItemRemoved(position)
+    }
+
+    private fun getAudioDurationFormatted(filePath: String): String {
+        return try {
+            val mp = MediaPlayer()
+            mp.setDataSource(filePath)
+            mp.prepare()
+            val durationMs = mp.duration
+            mp.release()
+            val minutes = (durationMs / 1000 / 60)
+            val seconds = ((durationMs / 1000) % 60)
+            String.format("%02d:%02d", minutes, seconds)
+        } catch (e: Exception) {
+            "00:00"
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startRecording()
+            } else {
+                Toast.makeText(this, "Microphone permission denied", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 } 

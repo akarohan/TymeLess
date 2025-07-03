@@ -93,23 +93,39 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_home -> {
                     drawerLayout.closeDrawers()
                     findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_home)
+                    // Clear checked state for all items
+                    val menu = navView.menu
+                    for (i in 0 until menu.size()) {
+                        menu.getItem(i).isChecked = false
+                    }
                     true
                 }
                 R.id.nav_gallery -> {
                     drawerLayout.closeDrawers()
                     findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_gallery)
+                    val menu = navView.menu
+                    for (i in 0 until menu.size()) {
+                        menu.getItem(i).isChecked = false
+                    }
                     true
                 }
                 R.id.nav_slideshow -> {
                     drawerLayout.closeDrawers()
                     findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_slideshow)
+                    val menu = navView.menu
+                    for (i in 0 until menu.size()) {
+                        menu.getItem(i).isChecked = false
+                    }
                     true
                 }
                 R.id.nav_settings -> {
                     drawerLayout.closeDrawers()
-                    Log.d("DrawerTest", "Settings tapped")
-                    Toast.makeText(this, "Opening Settings", Toast.LENGTH_SHORT).show()
                     startActivity(Intent(this, SettingsMainActivity::class.java))
+                    // Clear checked state for all items
+                    val menu = navView.menu
+                    for (i in 0 until menu.size()) {
+                        menu.getItem(i).isChecked = false
+                    }
                     true
                 }
                 else -> false
