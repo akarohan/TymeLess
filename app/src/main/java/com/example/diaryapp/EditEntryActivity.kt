@@ -41,6 +41,7 @@ import com.example.diaryapp.ImageBlockAdapter
 import com.example.diaryapp.AudioChipAdapter
 import com.example.diaryapp.AudioItem
 import android.media.MediaPlayer
+import androidx.recyclerview.widget.GridLayoutManager
 
 class EditEntryActivity : AppCompatActivity() {
     private lateinit var richEditor: RichEditor
@@ -183,7 +184,7 @@ class EditEntryActivity : AppCompatActivity() {
             imageUris.removeAt(position)
             imageBlockAdapter.notifyItemRemoved(position)
         }
-        imagesRecyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        imagesRecyclerView.layoutManager = GridLayoutManager(this, 2)
         imagesRecyclerView.adapter = imageBlockAdapter
 
         btnGallery.setOnClickListener {
