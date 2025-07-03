@@ -130,14 +130,8 @@ class EditEntryActivity : AppCompatActivity() {
                 entryId = entry.id
                 imageUris.clear()
                 audioItems.clear()
-                entry.imagePaths?.forEach { path ->
-                    if (path.endsWith(".3gp")) {
-                        val duration = getAudioDurationFormatted(path)
-                        audioItems.add(AudioItem(path, duration))
-                    } else {
-                        imageUris.add(android.net.Uri.parse(path))
-                    }
-                }
+                imageUris.addAll(entry.imagePaths.map { android.net.Uri.parse(it) })
+                audioItems.addAll(entry.audioList)
                 imageBlockAdapter.notifyDataSetChanged()
                 audioChipAdapter.notifyDataSetChanged()
             } else {
@@ -266,26 +260,37 @@ class EditEntryActivity : AppCompatActivity() {
         val imagePaths = imageUris.map { uri ->
             if (uri.scheme == "file") uri.path!! else uri.toString()
         }
-        val audioPaths = audioItems.map { it.filePath }
         val entry = if (entryId != null) {
             DiaryEntry(
                 id = entryId!!,
                 date = entryDate,
                 htmlContent = htmlContent,
-                imagePaths = imagePaths + audioPaths,
-                title = title
+                imagePaths = imagePaths,
+                title = title,
+                audioList = audioItems.toList()
             )
         } else {
+            // Allow auto-save to create a new entry if not empty
             DiaryEntry(
                 date = entryDate,
                 htmlContent = htmlContent,
-                imagePaths = imagePaths + audioPaths,
-                title = title
+                imagePaths = imagePaths,
+                title = title,
+                audioList = audioItems.toList()
             )
         }
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 db.diaryEntryDao().insertOrUpdate(entry)
+            }
+            if (entryId == null) {
+                // If this was a new entry, fetch its ID after insert
+                val entries = withContext(Dispatchers.IO) {
+                    db.diaryEntryDao().getEntriesByDate(entryDate)
+                }
+                if (entries.isNotEmpty()) {
+                    entryId = entries[0].id
+                }
             }
             if (!autoSave) {
                 android.widget.Toast.makeText(this@EditEntryActivity, "Entry saved", android.widget.Toast.LENGTH_SHORT).show()

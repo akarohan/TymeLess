@@ -12,5 +12,8 @@ data class DiaryEntry(
     val date: Long, // Store as epoch millis for easier querying
     val htmlContent: String,
     val imagePaths: List<String>,
-    val title: String? = null
+    val title: String? = null,
+    @TypeConverters(DiaryTypeConverters::class)
+    val audioList: List<AudioItem> = emptyList(),
+    val stepCount: Int? = null // For steps feature
 ) 

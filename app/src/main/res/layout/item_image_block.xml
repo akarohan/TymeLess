@@ -27,8 +27,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:tint="#888888"
+                android:src="@drawable/ic_circle_cross"
                 android:contentDescription="Delete image"
                 android:layout_gravity="top|end"
                 android:layout_margin="2dp"/>
