@@ -136,6 +136,18 @@ class EditEntryActivity : AppCompatActivity() {
                 audioItems.addAll(entry.audioList)
                 imageBlockAdapter.notifyDataSetChanged()
                 audioChipAdapter.notifyDataSetChanged()
+                
+                // Load mood value
+                val moodSeekBar = findViewById<android.widget.SeekBar>(R.id.moodSeekBar)
+                val moodEmojiImageView = findViewById<android.widget.ImageView>(R.id.moodEmojiImageView)
+                val moodDrawables = arrayOf(
+                    R.drawable.ic_mood_neg5, R.drawable.ic_mood_neg4, R.drawable.ic_mood_neg3,
+                    R.drawable.ic_mood_neg2, R.drawable.ic_mood_neg1, R.drawable.ic_mood_0,
+                    R.drawable.ic_mood_1, R.drawable.ic_mood_2, R.drawable.ic_mood_3,
+                    R.drawable.ic_mood_4, R.drawable.ic_mood_5
+                )
+                moodEmojiImageView.setImageResource(moodDrawables[5])
+                moodSeekBar.progress = entry.mood
             } else {
                 titleEditText.setText("")
                 mainEditText.setText("")
@@ -241,6 +253,45 @@ class EditEntryActivity : AppCompatActivity() {
         )
         audioRecyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         audioRecyclerView.adapter = audioChipAdapter
+
+        // Mood slider setup
+        val moodSeekBar = findViewById<android.widget.SeekBar>(R.id.moodSeekBar)
+        val moodEmojiImageView = findViewById<android.widget.ImageView>(R.id.moodEmojiImageView)
+        val moodDrawables = arrayOf(
+            R.drawable.ic_mood_neg5, R.drawable.ic_mood_neg4, R.drawable.ic_mood_neg3,
+            R.drawable.ic_mood_neg2, R.drawable.ic_mood_neg1, R.drawable.ic_mood_0,
+            R.drawable.ic_mood_1, R.drawable.ic_mood_2, R.drawable.ic_mood_3,
+            R.drawable.ic_mood_4, R.drawable.ic_mood_5
+        )
+
+        // Set default emoji for new entries
+        moodEmojiImageView.setImageResource(moodDrawables[5])
+        moodSeekBar.progress = 5
+
+        moodSeekBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+                moodEmojiImageView.setImageResource(moodDrawables[progress])
+                seekBar?.let {
+                    val availableWidth = it.width - it.paddingLeft - it.paddingRight
+                    val max = it.max
+                    val percent = progress.toFloat() / max
+                    val thumbCenterX = it.paddingLeft + percent * availableWidth
+                    // Set emoji X relative to the SeekBar's left edge
+                    moodEmojiImageView.x = it.x + thumbCenterX - (moodEmojiImageView.width / 2)
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {}
+        })
+
+        // Initial position after layout
+        moodSeekBar.post {
+            val availableWidth = moodSeekBar.width - moodSeekBar.paddingLeft - moodSeekBar.paddingRight
+            val max = moodSeekBar.max
+            val percent = moodSeekBar.progress.toFloat() / max
+            val thumbCenterX = moodSeekBar.paddingLeft + percent * availableWidth
+            moodEmojiImageView.x = moodSeekBar.x + thumbCenterX - (moodEmojiImageView.width / 2)
+        }
     }
 
     override fun onPause() {
@@ -262,6 +313,9 @@ class EditEntryActivity : AppCompatActivity() {
         val imagePaths = imageUris.map { uri ->
             if (uri.scheme == "file") uri.path!! else uri.toString()
         }
+        val moodSeekBar = findViewById<android.widget.SeekBar>(R.id.moodSeekBar)
+        val currentMood = moodSeekBar.progress
+        
         val entry = if (entryId != null) {
             DiaryEntry(
                 id = entryId!!,
@@ -269,7 +323,8 @@ class EditEntryActivity : AppCompatActivity() {
                 htmlContent = htmlContent,
                 imagePaths = imagePaths,
                 title = title,
-                audioList = audioItems.toList()
+                audioList = audioItems.toList(),
+                mood = currentMood
             )
         } else {
             // Allow auto-save to create a new entry if not empty
@@ -278,7 +333,8 @@ class EditEntryActivity : AppCompatActivity() {
                 htmlContent = htmlContent,
                 imagePaths = imagePaths,
                 title = title,
-                audioList = audioItems.toList()
+                audioList = audioItems.toList(),
+                mood = currentMood
             )
         }
         lifecycleScope.launch {
