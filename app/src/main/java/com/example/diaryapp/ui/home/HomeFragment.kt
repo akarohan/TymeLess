@@ -21,6 +21,8 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import de.hdodenhof.circleimageview.CircleImageView
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.example.diaryapp.R
 
 class HomeFragment : Fragment() {
 
@@ -93,7 +95,27 @@ class HomeFragment : Fragment() {
         }
 
         val fab = binding.addEntryFab
+        val fabMenu1 = binding.root.findViewById<FloatingActionButton>(R.id.addEntryFabMenu1)
+        val fabMenu2 = binding.root.findViewById<FloatingActionButton>(R.id.addEntryFabMenu2)
+        var fabMenuOpen = false
         fab.setOnClickListener {
+            fabMenuOpen = !fabMenuOpen
+            if (fabMenuOpen) {
+                fabMenu1.show()
+                fabMenu2.show()
+                fab.setImageResource(R.drawable.ic_keyboard_arrow_up_white_24dp)
+                fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
+                fab.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
+            } else {
+                fabMenu1.hide()
+                fabMenu2.hide()
+                fab.setImageResource(android.R.drawable.ic_input_add)
+                fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4FC3F7"))
+                fab.imageTintList = null
+            }
+        }
+
+        fabMenu2.setOnClickListener {
             val intent = Intent(requireContext(), EditEntryActivity::class.java)
             // No extras: new blank entry
             startActivity(intent)
