@@ -8,5 +8,7 @@
     <color name="white">#FFFFFF</color>
     <color name="background_black">#000000</color>
     <color name="text_white">#FFFFFF</color>
+    <color name="red_note_card">#FF5252</color>
+    <color name="skyblue_note_card">#4FC3F7</color>
     <!-- Add a neutral user placeholder color or drawable if needed -->
 </resources>

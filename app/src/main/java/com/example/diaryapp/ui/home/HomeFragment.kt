@@ -23,6 +23,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.example.diaryapp.R
+import androidx.navigation.fragment.findNavController
 
 class HomeFragment : Fragment() {
 
@@ -109,10 +110,14 @@ class HomeFragment : Fragment() {
             } else {
                 fabMenu1.hide()
                 fabMenu2.hide()
-                fab.setImageResource(android.R.drawable.ic_input_add)
-                fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4FC3F7"))
+                fab.setImageResource(R.drawable.ic_add_white)
+                fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
                 fab.imageTintList = null
             }
+        }
+
+        fabMenu1.setOnClickListener {
+            findNavController().navigate(R.id.nav_notes_home)
         }
 
         fabMenu2.setOnClickListener {
@@ -120,6 +125,19 @@ class HomeFragment : Fragment() {
             // No extras: new blank entry
             startActivity(intent)
         }
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (fabMenuOpen && (dx != 0 || dy != 0)) {
+                    fabMenuOpen = false
+                    fabMenu1.hide()
+                    fabMenu2.hide()
+                    fab.setImageResource(R.drawable.ic_add_white)
+                    fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
+                    fab.imageTintList = null
+                }
+            }
+        })
 
         return root
     }

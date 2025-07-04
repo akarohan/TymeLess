@@ -5,11 +5,14 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.diaryapp.data.Note
+import com.example.diaryapp.data.NoteDao
 
-@Database(entities = [DiaryEntry::class], version = 5)
+@Database(entities = [DiaryEntry::class, Note::class], version = 8)
 @TypeConverters(DiaryTypeConverters::class)
 abstract class DiaryDatabase : RoomDatabase() {
     abstract fun diaryEntryDao(): DiaryEntryDao
+    abstract fun noteDao(): NoteDao
 
     companion object {
         @Volatile

@@ -21,7 +21,7 @@ class SettingsMainActivity : AppCompatActivity() {
         supportActionBar?.title = boldTitle
         toolbar.setTitleTextColor(android.graphics.Color.BLACK)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back)
+        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back_circle_white)
         toolbar.navigationIcon?.setTintList(null)
         toolbar.setNavigationOnClickListener {
             finish()

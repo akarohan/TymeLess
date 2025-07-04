@@ -31,7 +31,7 @@ class SettingsActivity : AppCompatActivity() {
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back)
+        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back_circle_white)
         toolbar.navigationIcon?.setTintList(null)
         toolbar.setNavigationOnClickListener {
             finish()
@@ -55,7 +55,6 @@ class SettingsActivity : AppCompatActivity() {
             val username = usernameInput.text.toString().trim()
             val password = passwordInput.text.toString()
             if (name.isEmpty() || username.isEmpty()) {
-                Toast.makeText(this, "Name and username cannot be empty", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val editor = prefs.edit()
@@ -66,7 +65,6 @@ class SettingsActivity : AppCompatActivity() {
             }
             editor.apply()
             Log.d("SettingsSave", "Saved name: $name, username: $username")
-            Toast.makeText(this, "Saved: $name, $username", Toast.LENGTH_SHORT).show()
             finish()
         }
     }

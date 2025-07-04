@@ -101,7 +101,7 @@ class EditEntryActivity : AppCompatActivity() {
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back)
+        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back_circle_white)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener {
             wasManuallySaved = true
@@ -609,12 +609,12 @@ class EditEntryActivity : AppCompatActivity() {
             prepare()
             start()
             setOnCompletionListener {
-                item.isPlaying = false
+                audioItems[position] = item.copy(isPlaying = false)
                 audioChipAdapter.notifyItemChanged(position)
                 currentlyPlayingIndex = null
             }
         }
-        item.isPlaying = true
+        audioItems[position] = item.copy(isPlaying = true)
         audioChipAdapter.notifyItemChanged(position)
         currentlyPlayingIndex = position
     }
@@ -624,7 +624,7 @@ class EditEntryActivity : AppCompatActivity() {
             if (idx in audioItems.indices) {
                 val item = audioItems[idx]
                 if (item is AudioItem) {
-                    item.isPlaying = false
+                    audioItems[idx] = item.copy(isPlaying = false)
                     audioChipAdapter.notifyItemChanged(idx)
                 }
             }
