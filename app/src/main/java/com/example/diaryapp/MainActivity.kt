@@ -64,16 +64,34 @@ class MainActivity : AppCompatActivity() {
     private lateinit var takeCoverImageLauncher: androidx.activity.result.ActivityResultLauncher<android.net.Uri>
     private var coverCameraImageUri: android.net.Uri? = null
     private val COVER_CAMERA_PERMISSION_REQUEST_CODE = 1002
+    private lateinit var pickThemeHeaderPicLauncher: androidx.activity.result.ActivityResultLauncher<String>
+    private lateinit var cropThemeHeaderPicLauncher: androidx.activity.result.ActivityResultLauncher<Intent>
+    private lateinit var prefs: SharedPreferences
+    private lateinit var toolbarBackgroundImage: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Set theme color only on the app bar (header)
-        val themeColor = ThemeUtils.getCurrentThemeColor(this)
-        binding.appBarMain.toolbar.setBackgroundColor(themeColor)
+        toolbarBackgroundImage = findViewById(R.id.toolbarBackgroundImage)
+
+        prefs = getEncryptedPrefs()
+
+        // Set theme pic or color on the app bar (header)
+        val themeHeaderPicUri = prefs.getString("theme_header_pic_uri", null)
+        if (themeHeaderPicUri != null && File(themeHeaderPicUri).exists()) {
+            Glide.with(this)
+                .load(Uri.fromFile(File(themeHeaderPicUri)))
+                .centerCrop()
+                .into(toolbarBackgroundImage)
+            toolbarBackgroundImage.visibility = View.VISIBLE
+            binding.appBarMain.toolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        } else {
+            toolbarBackgroundImage.visibility = View.GONE
+            val themeColor = ThemeUtils.getCurrentThemeColor(this)
+            binding.appBarMain.toolbar.setBackgroundColor(themeColor)
+        }
 
         // setSupportActionBar(binding.appBarMain.toolbar) // keep this to use the toolbar
         val drawerLayout: DrawerLayout = binding.drawerLayout
@@ -132,7 +150,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.nav_settings -> {
                     drawerLayout.closeDrawers()
-                    startActivity(Intent(this, SettingsMainActivity::class.java))
+                    startActivity(Intent(this, SettingsActivity::class.java))
                     // Clear checked state for all items
                     val menu = navView.menu
                     for (i in 0 until menu.size()) {
@@ -153,7 +171,6 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_logout -> {
                     drawerLayout.closeDrawers()
                     // Clear only session-related preferences, preserve login credentials and images
-                    val prefs = getEncryptedPrefs()
                     prefs.edit()
                         // .remove("profile_pic_uri")
                         // .remove("cover_pic_uri")
@@ -221,13 +238,38 @@ class MainActivity : AppCompatActivity() {
                         .setTitle("Pick a theme color")
                         .setItems(colorNames) { _, which ->
                             val color = colorOptions[which]
+                            Log.d("THEME_COLOR", "Selected color: ${String.format("#%06X", 0xFFFFFF and color)}")
                             prefsColor.edit().putInt("theme_color", color).apply()
-                            // Set theme color only on the app bar (header)
+                            
+                            // Remove theme header image if it exists
+                            val themeHeaderPicFile = File(filesDir, "theme_header_pic.jpg")
+                            if (themeHeaderPicFile.exists()) {
+                                themeHeaderPicFile.delete()
+                                Log.d("THEME_COLOR", "Deleted theme header image file")
+                            }
+                            prefs.edit().remove("theme_header_pic_uri").apply()
+                            
+                            // Hide the background image and show the color
+                            if (::toolbarBackgroundImage.isInitialized) {
+                                toolbarBackgroundImage.visibility = View.GONE
+                                Log.d("THEME_COLOR", "Hidden toolbar background image")
+                            }
                             binding.appBarMain.toolbar.setBackgroundColor(color)
+                            Log.d("THEME_COLOR", "Applied color to toolbar")
+                            
+                            // Force refresh the toolbar
+                            binding.appBarMain.toolbar.invalidate()
+                            binding.appBarMain.toolbar.requestLayout()
+                            
                             Toast.makeText(this, "Theme color applied!", Toast.LENGTH_SHORT).show()
                         }
                         .setNegativeButton("Cancel", null)
                         .show()
+                    true
+                }
+                R.id.nav_change_theme_pic -> {
+                    drawerLayout.closeDrawers()
+                    pickThemeHeaderPicLauncher.launch("image/*")
                     true
                 }
                 else -> false
@@ -240,7 +282,6 @@ class MainActivity : AppCompatActivity() {
         val coverCameraButton = headerView.findViewById<ImageButton>(R.id.coverCameraButton)
         val nameTextView = headerView.findViewById<TextView>(R.id.navUserName)
         val usernameTextView = headerView.findViewById<TextView>(R.id.navUserUsername)
-        val prefs = getEncryptedPrefs()
         val profilePicUri = prefs.getString("profile_pic_uri", null)
         val coverPicUri = prefs.getString("cover_pic_uri", null)
         Log.d("PROFILE_IMAGE", "updateDrawerHeader profilePicUri: $profilePicUri")
@@ -355,8 +396,7 @@ class MainActivity : AppCompatActivity() {
 
         // Set greeting message below the logo based on time and user name
         val greetingTextView = binding.appBarMain.toolbar.findViewById<TextView>(R.id.greeting)
-        val prefsGreeting = getEncryptedPrefs()
-        val userName = prefsGreeting.getString("name", "User") ?: "User"
+        val userName = prefs.getString("name", "User") ?: "User"
         greetingTextView?.text = getGreetingMessage(userName)
 
         cropImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -395,6 +435,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        pickThemeHeaderPicLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let {
+                val destUri = Uri.fromFile(File(filesDir, "theme_header_pic_cropped.jpg"))
+                val uCrop = UCrop.of(it, destUri)
+                    .withAspectRatio(16f, 9f)
+                    .withMaxResultSize(1200, 675)
+                cropThemeHeaderPicLauncher.launch(uCrop.getIntent(this))
+            }
+        }
+        cropThemeHeaderPicLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val data = result.data
+                val resultUri = UCrop.getOutput(data!!)
+                if (resultUri != null) {
+                    saveThemeHeaderPicFromUri(resultUri)
+                }
+            }
+        }
+
         // Set up toolbar profile image to open right-side navigation drawer when tapped
         val toolbarProfileImageView = binding.appBarMain.toolbar.findViewById<de.hdodenhof.circleimageview.CircleImageView>(R.id.profileImageView)
         toolbarProfileImageView?.setOnClickListener {
@@ -410,8 +469,8 @@ class MainActivity : AppCompatActivity() {
         val nameTextView = headerView.findViewById<TextView>(R.id.navUserName)
         val usernameTextView = headerView.findViewById<TextView>(R.id.navUserUsername)
         val prefs = getEncryptedPrefs()
-        val profilePicUri = prefs.getString("profile_pic_uri", null)
         val coverPicUri = prefs.getString("cover_pic_uri", null)
+        val profilePicUri = prefs.getString("profile_pic_uri", null)
         
         // Update username and name in the navigation drawer header
         val userName = prefs.getString("name", "User") ?: "User"
@@ -419,27 +478,25 @@ class MainActivity : AppCompatActivity() {
         nameTextView?.text = userName
         usernameTextView?.text = userUsername
         
-        Log.d("PROFILE_IMAGE", "updateDrawerHeader profilePicUri: $profilePicUri")
+        // Update profile image with cache busting
         var fileExists = false
         var file: File? = null
         if (profilePicUri != null) {
             file = if (profilePicUri.startsWith("/")) File(profilePicUri) else null
             fileExists = file?.exists() == true
-            Log.d("PROFILE_IMAGE", "File exists: $fileExists")
         }
         if (profilePicUri != null && profileImageView != null && fileExists) {
             val uri = android.net.Uri.fromFile(file)
-            // Set the profile image in the nav drawer header
             Glide.with(this)
                 .load(uri)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
                 .skipMemoryCache(true)
                 .into(profileImageView)
         } else if (profileImageView != null) {
             profileImageView.setImageResource(R.drawable.ic_user_placeholder)
         }
-        // Set the blurred background (cover photo)
-        if (coverPicUri != null && blurredBackground != null) {
+        // Update blurred background (cover photo) with cache busting
+        if (coverPicUri != null && blurredBackground != null && File(coverPicUri).exists()) {
             val uri = if (coverPicUri.startsWith("/")) {
                 android.net.Uri.fromFile(java.io.File(coverPicUri))
             } else {
@@ -448,12 +505,12 @@ class MainActivity : AppCompatActivity() {
             Glide.with(this)
                 .asBitmap()
                 .load(uri)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
                 .skipMemoryCache(true)
-                .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
-                    override fun onResourceReady(resource: android.graphics.Bitmap, transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?) {
+                .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
+                    override fun onResourceReady(resource: Bitmap, transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?) {
                         val scaled = if (resource.width > 800 || resource.height > 800) {
-                            android.graphics.Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
+                            Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
                         } else resource
                         jp.wasabeef.blurry.Blurry.with(this@MainActivity)
                             .radius(20)
@@ -462,30 +519,34 @@ class MainActivity : AppCompatActivity() {
                     }
                     override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {}
                 })
-        } else if (profilePicUri != null && blurredBackground != null) {
+        } else if (profileImageView != null && blurredBackground != null) {
             // fallback: use profile pic as cover if no cover set
-            val uri = if (profilePicUri.startsWith("/")) {
+            val uri = if (profilePicUri != null && profilePicUri.startsWith("/")) {
                 android.net.Uri.fromFile(java.io.File(profilePicUri))
-            } else {
+            } else if (profilePicUri != null) {
                 android.net.Uri.parse(profilePicUri)
+            } else {
+                null
             }
-            Glide.with(this)
-                .asBitmap()
-                .load(uri)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .skipMemoryCache(true)
-                .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
-                    override fun onResourceReady(resource: android.graphics.Bitmap, transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?) {
-                        val scaled = if (resource.width > 800 || resource.height > 800) {
-                            android.graphics.Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
-                        } else resource
-                        jp.wasabeef.blurry.Blurry.with(this@MainActivity)
-                            .radius(20)
-                            .from(scaled)
-                            .into(blurredBackground)
-                    }
-                    override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {}
-                })
+            if (uri != null) {
+                Glide.with(this)
+                    .asBitmap()
+                    .load(uri)
+                    .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
+                        override fun onResourceReady(resource: Bitmap, transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?) {
+                            val scaled = if (resource.width > 800 || resource.height > 800) {
+                                Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
+                            } else resource
+                            jp.wasabeef.blurry.Blurry.with(this@MainActivity)
+                                .radius(20)
+                                .from(scaled)
+                                .into(blurredBackground)
+                        }
+                        override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {}
+                    })
+            }
         }
     }
 
@@ -513,11 +574,29 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (::toolbarBackgroundImage.isInitialized) {
+            val themeHeaderPicUri = prefs.getString("theme_header_pic_uri", null)
+            if (themeHeaderPicUri != null && File(themeHeaderPicUri).exists()) {
+                Glide.with(this)
+                    .load(Uri.fromFile(File(themeHeaderPicUri)))
+                    .centerCrop()
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(toolbarBackgroundImage)
+                toolbarBackgroundImage.visibility = View.VISIBLE
+                binding.appBarMain.toolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                Log.d("THEME_PIC", "onResume: Loaded theme header image: $themeHeaderPicUri")
+            } else {
+                toolbarBackgroundImage.visibility = View.GONE
+                val themeColor = ThemeUtils.getCurrentThemeColor(this)
+                binding.appBarMain.toolbar.setBackgroundColor(themeColor)
+                Log.d("THEME_PIC", "onResume: No theme image, using color: ${String.format("#%06X", 0xFFFFFF and themeColor)}")
+            }
+        }
         updateDrawerHeader()
         // Update toolbar profile image on resume
         val toolbarProfileImageView = binding.appBarMain.toolbar.findViewById<de.hdodenhof.circleimageview.CircleImageView>(R.id.profileImageView)
-        val prefsToolbar = getEncryptedPrefs()
-        val profilePicUri = prefsToolbar.getString("profile_pic_uri", null)
+        val profilePicUri = prefs.getString("profile_pic_uri", null)
         if (profilePicUri != null && toolbarProfileImageView != null) {
             val uri = if (profilePicUri.startsWith("/")) {
                 android.net.Uri.fromFile(java.io.File(profilePicUri))
@@ -536,8 +615,7 @@ class MainActivity : AppCompatActivity() {
         }
         // Update greeting message on resume
         val greetingTextView = binding.appBarMain.toolbar.findViewById<TextView>(R.id.greeting)
-        val prefsGreeting = getEncryptedPrefs()
-        val userName = prefsGreeting.getString("name", "User") ?: "User"
+        val userName = prefs.getString("name", "User") ?: "User"
         greetingTextView?.text = getGreetingMessage(userName)
     }
 
@@ -588,7 +666,6 @@ class MainActivity : AppCompatActivity() {
             outputStream.close()
             Log.d("PROFILE_IMAGE", "Saved profile image to: ${file.absolutePath}, exists: ${file.exists()}")
             // Save file path in preferences
-            val prefs = getEncryptedPrefs()
             prefs.edit().putString("profile_pic_uri", file.absolutePath).apply()
             Log.d("PROFILE_IMAGE", "Saved profile_pic_uri in prefs: ${file.absolutePath}")
             updateDrawerHeader()
@@ -625,7 +702,6 @@ class MainActivity : AppCompatActivity() {
             inputStream?.close()
             outputStream.close()
             // Save file path in preferences
-            val prefs = getEncryptedPrefs()
             prefs.edit().putString("cover_pic_uri", file.absolutePath).apply()
             updateDrawerHeader()
         } catch (e: Exception) {
@@ -636,7 +712,6 @@ class MainActivity : AppCompatActivity() {
     private fun removeProfileImage() {
         val file = File(filesDir, "profile_image.jpg")
         if (file.exists()) file.delete()
-        val prefs = getEncryptedPrefs()
         prefs.edit().remove("profile_pic_uri").apply()
         updateDrawerHeader()
         // Update toolbar/home header profile image immediately
@@ -647,9 +722,40 @@ class MainActivity : AppCompatActivity() {
     private fun removeCoverImage() {
         val file = File(filesDir, "cover_image.jpg")
         if (file.exists()) file.delete()
-        val prefs = getEncryptedPrefs()
         prefs.edit().remove("cover_pic_uri").apply()
         updateDrawerHeader()
+    }
+
+    private fun saveThemeHeaderPicFromUri(uri: Uri) {
+        try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val timestamp = System.currentTimeMillis()
+            val file = File(filesDir, "theme_header_pic_$timestamp.jpg")
+            val outputStream = FileOutputStream(file)
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+            prefs.edit().putString("theme_header_pic_uri", file.absolutePath).apply()
+            
+            // Immediately apply the theme header image to the main toolbar
+            if (::toolbarBackgroundImage.isInitialized) {
+                Glide.with(this)
+                    .load(Uri.fromFile(file))
+                    .centerCrop()
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(toolbarBackgroundImage)
+                toolbarBackgroundImage.visibility = View.VISIBLE
+                binding.appBarMain.toolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                Log.d("THEME_PIC", "Applied theme header image immediately: ${file.absolutePath}")
+            }
+            
+            updateDrawerHeader()
+            Toast.makeText(this, "Theme header image applied!", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Failed to apply theme image", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun getEncryptedPrefs() = EncryptedSharedPreferences.create(

@@ -27,6 +27,18 @@
                 android:layout_height="match_parent"
                 android:padding="0dp">
 
+                <!-- Background Image for Theme Header -->
+                <ImageView
+                    android:id="@+id/toolbarBackgroundImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Toolbar background image"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
                 <!-- TymeLess Logo as image -->
                 <ImageView
                     android:id="@+id/appLogo"

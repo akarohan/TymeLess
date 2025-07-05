@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide
 import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
+import android.widget.TextView
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var nameInput: EditText
@@ -32,14 +33,27 @@ class SettingsActivity : AppCompatActivity() {
         val themeColor = ThemeUtils.getCurrentThemeColor(this)
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         toolbar.setBackgroundColor(themeColor)
-        toolbar.setTitleTextColor(android.graphics.Color.WHITE)
+        toolbar.setTitleTextColor(android.graphics.Color.BLACK)
         toolbar.navigationIcon?.setTint(android.graphics.Color.WHITE)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back_circle_white)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
         toolbar.navigationIcon?.setTintList(null)
         toolbar.setNavigationOnClickListener {
             finish()
+        }
+        // Set the toolbar title directly and its color
+        toolbar.title = "Account Settings"
+        toolbar.setTitleTextColor(android.graphics.Color.BLACK)
+        // Make the title bold
+        toolbar.post {
+            for (i in 0 until toolbar.childCount) {
+                val view = toolbar.getChildAt(i)
+                if (view is android.widget.TextView && view.text == "Security") {
+                    view.setTypeface(view.typeface, android.graphics.Typeface.BOLD)
+                }
+            }
         }
 
         nameInput = findViewById(R.id.nameInput)

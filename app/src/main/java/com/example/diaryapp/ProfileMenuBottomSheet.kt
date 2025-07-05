@@ -24,7 +24,7 @@ class ProfileMenuBottomSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.settingsButton.setOnClickListener {
-            startActivity(Intent(requireContext(), SettingsMainActivity::class.java))
+            startActivity(Intent(requireContext(), SettingsActivity::class.java))
             dismiss()
         }
     }

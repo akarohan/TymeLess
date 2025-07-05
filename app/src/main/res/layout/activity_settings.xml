@@ -17,19 +17,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/greyback"
-            >
-
-            <TextView
-                android:id="@+id/toolbarTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Security"
-                android:textColor="@color/black"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:gravity="center_vertical"/>
-        </androidx.appcompat.widget.Toolbar>
+            android:background="@color/greyback" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <EditText
