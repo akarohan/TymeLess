@@ -74,29 +74,39 @@ class EditNoteActivity : AppCompatActivity() {
     private var isUnderlineActive = false
     private var isStrikethroughActive = false
     private var noteId: Int = 0
-    private var hasSaved = false
     private var noteType: String = "N"
+    private var isSaving = false
+    private var isImageAdding = false
+
+    private fun addImageToList(filePath: String) {
+        val uri = Uri.fromFile(File(filePath))
+        imageUris.add(uri)
+        imageBlockAdapter.notifyItemInserted(imageUris.size - 1)
+        isImageAdding = false // Done adding image
+    }
 
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             val filePath = copyUriToInternalStorage(it)
             if (filePath != null) {
-                imageUris.add(Uri.fromFile(File(filePath)))
-                imageBlockAdapter.notifyItemInserted(imageUris.size - 1)
+                addImageToList(filePath)
             }
         }
     }
 
     private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success: Boolean ->
         if (success && imageUri != null) {
-            imageUris.add(imageUri!!)
-            imageBlockAdapter.notifyItemInserted(imageUris.size - 1)
+            val filePath = copyUriToInternalStorage(imageUri!!)
+            if (filePath != null) {
+                addImageToList(filePath)
+            }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_note)
+        isSaving = false // Reset save flag on activity start
         
         // Set theme color only on the app bar (header)
         val themeColor = ThemeUtils.getCurrentThemeColor(this)
@@ -120,13 +130,41 @@ class EditNoteActivity : AppCompatActivity() {
         audioRecyclerView = findViewById(R.id.audioRecyclerView)
         viewModel = ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(application)).get(NotesHomeViewModel::class.java)
 
+        // Initialize adapters BEFORE loading data
+        imageBlockAdapter = ImageBlockAdapter(imageUris) { position ->
+            imageUris.removeAt(position)
+            imageBlockAdapter.notifyItemRemoved(position)
+        }
+        imagesRecyclerView.layoutManager = GridLayoutManager(this, 2)
+        imagesRecyclerView.adapter = imageBlockAdapter
+
+        audioChipAdapter = AudioChipAdapter(audioItems,
+            onPlayPause = { item, pos -> playPauseAudio(item, pos) },
+            onDelete = { item, pos ->
+                audioItems.removeAt(pos)
+                audioChipAdapter.notifyItemRemoved(pos)
+            })
+        audioRecyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        audioRecyclerView.adapter = audioChipAdapter
+
         noteId = intent.getIntExtra("note_id", 0)
         noteType = intent.getStringExtra("note_type") ?: "N"
         if (noteId != 0) {
             // Editing existing note, prefill fields
             titleEditText.setText(intent.getStringExtra("note_title") ?: "")
             mainEditText.setText(intent.getStringExtra("note_content") ?: "")
-            // TODO: Load images/audio if needed
+            // Load images/audio if needed
+            lifecycleScope.launch {
+                val note = viewModel.getNoteById(noteId)
+                note?.let {
+                    imageUris.clear()
+                    imageUris.addAll(it.imagePaths.map { path -> Uri.fromFile(File(path)) })
+                    imageBlockAdapter.notifyDataSetChanged()
+                    audioItems.clear()
+                    audioItems.addAll(it.audioList)
+                    audioChipAdapter.notifyDataSetChanged()
+                }
+            }
         }
 
         // Date chip logic
@@ -151,34 +189,16 @@ class EditNoteActivity : AppCompatActivity() {
         setupFormatButtons()
 
         // Image logic
-        imageBlockAdapter = ImageBlockAdapter(imageUris) { position ->
-            imageUris.removeAt(position)
-            imageBlockAdapter.notifyItemRemoved(position)
-        }
-        imagesRecyclerView.layoutManager = GridLayoutManager(this, 2)
-        imagesRecyclerView.adapter = imageBlockAdapter
-        btnGallery.setOnClickListener { galleryLauncher.launch("image/*") }
+        btnGallery.setOnClickListener { isImageAdding = true; galleryLauncher.launch("image/*") }
         btnCamera.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA_PERMISSION)
-            } else {
-                val photoUri = createImageUri()
-                if (photoUri != null) {
-                    imageUri = photoUri
-                    cameraLauncher.launch(photoUri)
-                }
+            isImageAdding = true
+            val photoUri = createImageUri()
+            if (photoUri != null) {
+                cameraLauncher.launch(photoUri)
             }
         }
 
         // Audio logic
-        audioChipAdapter = AudioChipAdapter(audioItems,
-            onPlayPause = { item, pos -> playPauseAudio(item, pos) },
-            onDelete = { item, pos ->
-                audioItems.removeAt(pos)
-                audioChipAdapter.notifyItemRemoved(pos)
-            })
-        audioRecyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-        audioRecyclerView.adapter = audioChipAdapter
         btnMic.setOnClickListener {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_RECORD_AUDIO_PERMISSION)
@@ -191,40 +211,57 @@ class EditNoteActivity : AppCompatActivity() {
             }
         }
 
+        // Checkbox logic
+        val btnCheckbox = findViewById<ImageButton>(R.id.btnCheckbox)
+        btnCheckbox.setOnClickListener {
+            addCheckbox()
+        }
+
         saveButton.setOnClickListener {
-            autoSaveNote()
-            Log.d("EditNoteActivity", "Save button pressed. Note: title='" + titleEditText.text + "', content='" + mainEditText.text + "', images=" + imageUris.size + ", audio=" + audioItems.size)
-            setResult(Activity.RESULT_OK)
-            finish()
+            isSaving = false // Reset flag so manual save always runs
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                autoSaveNote()
+                setResult(Activity.RESULT_OK)
+                finish()
+            }, 300)
         }
     }
 
     override fun onPause() {
         super.onPause()
-        autoSaveNote()
+        // Only autosave if not already saving and not adding image
+        if (!isSaving && !isImageAdding) {
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                autoSaveNote()
+            }, 300)
+        }
     }
 
     private fun autoSaveNote() {
-        if (hasSaved) return
-        hasSaved = true
+        if (isSaving) return
+        // Debug Toast for saving
         val title = titleEditText.text.toString().trim()
         val content = mainEditText.text.toString().trim()
-        Log.d("EditNoteActivity", "Auto-saving note: title='" + title + "', content='" + content + "', images=" + imageUris.size + ", audio=" + audioItems.size)
+        val imagePathsToSave = imageUris.map { uri -> 
+            when {
+                uri.scheme == "file" -> uri.path ?: uri.toString()
+                else -> uri.toString()
+            }
+        }
+        isSaving = true
         if (title.isNotEmpty() || content.isNotEmpty() || imageUris.isNotEmpty() || audioItems.isNotEmpty()) {
             val note = Note(
                 id = noteId,
                 title = title,
                 content = content,
-                imagePaths = imageUris.map { it.toString() },
+                imagePaths = imagePathsToSave,
                 audioList = audioItems,
                 noteType = noteType
             )
-            if (noteId != 0) {
-                viewModel.update(note)
-            } else {
-                viewModel.insert(note)
+            lifecycleScope.launch {
+                val newId = viewModel.insertOrReplace(note)
+                if (noteId == 0) noteId = newId.toInt()
             }
-            Log.d("EditNoteActivity", "Note inserted/updated: $note")
         }
     }
 
@@ -496,5 +533,20 @@ class EditNoteActivity : AppCompatActivity() {
             }
             currentlyPlayingIndex = pos
         }
+    }
+
+    private fun addCheckbox() {
+        val currentPosition = mainEditText.selectionStart
+        val currentText = mainEditText.text.toString()
+        
+        // Create checkbox text
+        val checkboxText = "☐ "
+        
+        // Insert checkbox at current cursor position
+        val newText = currentText.substring(0, currentPosition) + checkboxText + currentText.substring(currentPosition)
+        mainEditText.setText(newText)
+        
+        // Move cursor after the checkbox
+        mainEditText.setSelection(currentPosition + checkboxText.length)
     }
 } 

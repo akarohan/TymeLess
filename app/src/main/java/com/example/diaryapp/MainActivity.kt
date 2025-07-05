@@ -130,24 +130,6 @@ class MainActivity : AppCompatActivity() {
                     }
                     true
                 }
-                R.id.nav_gallery -> {
-                    drawerLayout.closeDrawers()
-                    findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_gallery)
-                    val menu = navView.menu
-                    for (i in 0 until menu.size()) {
-                        menu.getItem(i).isChecked = false
-                    }
-                    true
-                }
-                R.id.nav_slideshow -> {
-                    drawerLayout.closeDrawers()
-                    findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_slideshow)
-                    val menu = navView.menu
-                    for (i in 0 until menu.size()) {
-                        menu.getItem(i).isChecked = false
-                    }
-                    true
-                }
                 R.id.nav_settings -> {
                     drawerLayout.closeDrawers()
                     startActivity(Intent(this, SettingsActivity::class.java))

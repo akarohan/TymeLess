@@ -20,6 +20,12 @@ import androidx.appcompat.app.AlertDialog
 import android.os.Handler
 import android.os.Looper
 import com.example.diaryapp.ThemeUtils
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
+import java.security.MessageDigest
+import android.widget.EditText
+import android.widget.Button
+import android.view.LayoutInflater as AndroidLayoutInflater
 
 class NotesHomeFragment : Fragment() {
     private var _binding: FragmentNotesHomeBinding? = null
@@ -42,7 +48,6 @@ class NotesHomeFragment : Fragment() {
         
         val fab = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFab)
         val fabMenu1 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu1)
-        val fabMenu2 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu2)
         val fabMenu3 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu3)
         val fabMenu4 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu4)
         val fabMenu5 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu5)
@@ -50,7 +55,6 @@ class NotesHomeFragment : Fragment() {
             fabMenuOpen = !fabMenuOpen
             if (fabMenuOpen) {
                 fabMenu1.show()
-                fabMenu2.show()
                 fabMenu3.show()
                 fabMenu4.show()
                 fabMenu5.show()
@@ -59,7 +63,6 @@ class NotesHomeFragment : Fragment() {
                 fab.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
             } else {
                 fabMenu1.hide()
-                fabMenu2.hide()
                 fabMenu3.hide()
                 fabMenu4.hide()
                 fabMenu5.hide()
@@ -75,14 +78,13 @@ class NotesHomeFragment : Fragment() {
         notesAdapter = NotesAdapter(
             emptyList(),
             onNoteClick = { note ->
-                // Open EditNoteActivity for editing
-                val intent = Intent(requireContext(), com.example.diaryapp.ui.home.EditNoteActivity::class.java)
-                intent.putExtra("note_id", note.id)
-                intent.putExtra("note_title", note.title)
-                intent.putExtra("note_content", note.content)
-                intent.putExtra("note_type", note.noteType)
-                // Add extras for images/audio if needed
-                startActivity(intent)
+                // Check if note requires password protection
+                if (note.noteType == "A" || note.noteType == "P") {
+                    showPasswordDialog(note)
+                } else {
+                    // Open EditNoteActivity directly for regular notes
+                    openEditNoteActivity(note)
+                }
             },
             onNoteDelete = { note ->
                 // Show confirmation dialog
@@ -125,7 +127,6 @@ class NotesHomeFragment : Fragment() {
                 if (fabMenuOpen && (dx != 0 || dy != 0)) {
                     fabMenuOpen = false
                     fabMenu1.hide()
-                    fabMenu2.hide()
                     fabMenu3.hide()
                     fabMenu4.hide()
                     fabMenu5.hide()
@@ -136,6 +137,63 @@ class NotesHomeFragment : Fragment() {
             }
         })
         return root
+    }
+
+    private fun showPasswordDialog(note: com.example.diaryapp.data.Note) {
+        val dialogView = AndroidLayoutInflater.from(requireContext()).inflate(R.layout.dialog_password_protection, null)
+        val passwordInput = dialogView.findViewById<EditText>(R.id.passwordInput)
+        val submitButton = dialogView.findViewById<Button>(R.id.submitButton)
+        val cancelButton = dialogView.findViewById<Button>(R.id.cancelButton)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+
+        submitButton.setOnClickListener {
+            val password = passwordInput.text.toString()
+            if (validatePassword(password)) {
+                dialog.dismiss()
+                openEditNoteActivity(note)
+            } else {
+                Toast.makeText(requireContext(), "Incorrect password", Toast.LENGTH_SHORT).show()
+                passwordInput.text.clear()
+            }
+        }
+
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun validatePassword(password: String): Boolean {
+        val prefs = getEncryptedPrefs()
+        val savedPasswordHash = prefs.getString("password_hash", null)
+        return savedPasswordHash != null && hash(password) == savedPasswordHash
+    }
+
+    private fun openEditNoteActivity(note: com.example.diaryapp.data.Note) {
+        val intent = Intent(requireContext(), com.example.diaryapp.ui.home.EditNoteActivity::class.java)
+        intent.putExtra("note_id", note.id)
+        intent.putExtra("note_title", note.title)
+        intent.putExtra("note_content", note.content)
+        intent.putExtra("note_type", note.noteType)
+        startActivity(intent)
+    }
+
+    private fun getEncryptedPrefs() = EncryptedSharedPreferences.create(
+        "diary_auth_prefs",
+        MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC),
+        requireContext(),
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
+
+    private fun hash(input: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     override fun onDestroyView() {

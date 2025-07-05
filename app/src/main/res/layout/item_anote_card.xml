@@ -14,14 +14,52 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/anoteTitle"
-            android:layout_width="wrap_content"
+        <!-- Image on top, landscape, curved edges -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            android:layout_marginBottom="12dp"
+            android:background="@android:color/transparent">
+
+            <ImageView
+                android:id="@+id/anoteImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:adjustViewBounds="true"
+                android:contentDescription="A note image"
+                android:background="@drawable/bg_image_rounded"
+                android:visibility="gone"/>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Title with lock icon -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Title Here"
-            android:textStyle="bold"
-            android:textSize="20sp"
-            android:textColor="#222222"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/anoteTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Title Here"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:textColor="#222222"/>
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_lock_lock"
+                android:contentDescription="Password protected"
+                android:tint="#222222"
+                android:layout_marginStart="8dp"/>
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/anoteContent"

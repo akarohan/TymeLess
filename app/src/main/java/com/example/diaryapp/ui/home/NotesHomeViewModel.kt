@@ -29,4 +29,12 @@ class NotesHomeViewModel(application: Application) : AndroidViewModel(applicatio
             noteDao.update(note)
         }
     }
+
+    suspend fun getNoteById(id: Int): Note? {
+        return noteDao.getNoteById(id)
+    }
+
+    suspend fun insertOrReplace(note: Note): Long {
+        return noteDao.insertOrReplace(note)
+    }
 } 

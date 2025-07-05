@@ -38,10 +38,6 @@
             android:exported="false"
             android:theme="@style/Theme.DiaryApp.NoActionBar" />
         <activity
-            android:name=".SettingsMainActivity"
-            android:exported="false"
-            android:theme="@style/Theme.DiaryApp.NoActionBar" />
-        <activity
             android:name=".EditEntryActivity"
             android:exported="false"
             android:theme="@style/Theme.DiaryApp.NoActionBar"

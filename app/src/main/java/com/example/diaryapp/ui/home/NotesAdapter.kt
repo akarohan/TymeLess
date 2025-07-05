@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.diaryapp.R
@@ -62,9 +63,44 @@ class NotesAdapter(
             2 -> itemView.findViewById(R.id.btnDeleteANote)
             else -> itemView.findViewById(R.id.btnDeleteNote)
         }
+        // For A note: single image
+        private val anoteImage: ImageView? = if (viewType == 2) itemView.findViewById(R.id.anoteImage) else null
+
         fun bind(note: Note) {
             title.text = note.title
-            content.text = note.content
+            // Hide content for password protected cards (A and P)
+            if (note.noteType == "A" || note.noteType == "P") {
+                content.text = "••••••••••••••••••••"
+                content.setTextColor(android.graphics.Color.GRAY)
+            } else {
+                content.text = note.content
+                content.setTextColor(android.graphics.Color.parseColor("#222222"))
+            }
+            // Show only one image for A notes
+            if (note.noteType == "A" && anoteImage != null) {
+                if (note.imagePaths.isNotEmpty()) {
+                    anoteImage.visibility = View.VISIBLE
+                    val path = note.imagePaths[0]
+                    val file = java.io.File(path)
+                    val uri = when {
+                        file.exists() -> android.net.Uri.fromFile(file)
+                        path.startsWith("content://") -> android.net.Uri.parse(path)
+                        else -> null
+                    }
+                    if (uri != null) {
+                        com.bumptech.glide.Glide.with(anoteImage.context)
+                            .load(uri)
+                            .placeholder(com.example.diaryapp.R.drawable.bg_image_rounded)
+                            .error(com.example.diaryapp.R.drawable.bg_image_rounded)
+                            .centerCrop()
+                            .into(anoteImage)
+                    } else {
+                        anoteImage.setImageResource(com.example.diaryapp.R.drawable.bg_image_rounded)
+                    }
+                } else {
+                    anoteImage.visibility = View.GONE
+                }
+            }
             itemView.setOnClickListener { onNoteClick(note) }
             btnDelete.setOnClickListener { onNoteDelete(note) }
         }

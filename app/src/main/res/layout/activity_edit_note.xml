@@ -268,6 +268,15 @@
                 android:contentDescription="Record audio"
                 android:layout_marginEnd="8dp"/>
 
+            <ImageButton
+                android:id="@+id/btnCheckbox"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/circle_white_bg"
+                android:src="@drawable/ic_checkbox"
+                android:contentDescription="Add checkbox"
+                android:layout_marginEnd="8dp"/>
+
             <Button
                 android:id="@+id/saveNoteButton"
                 android:layout_width="0dp"
