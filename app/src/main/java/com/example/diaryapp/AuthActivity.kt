@@ -11,6 +11,16 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import java.security.MessageDigest
 import android.widget.TextView
+import android.widget.VideoView
+import android.net.Uri
+import android.util.AttributeSet
+import android.view.TextureView
+import android.view.Surface
+import android.media.MediaPlayer
+import android.view.SurfaceHolder
+import android.widget.FrameLayout
+import android.view.View
+import android.widget.ImageView
 
 class AuthActivity : AppCompatActivity() {
     private lateinit var usernameInput: EditText
@@ -22,12 +32,44 @@ class AuthActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_auth)
 
+        val prefs = getEncryptedPrefs()
+        val customBgUri = prefs.getString("login_bg_uri", null)
+        val customBgIsImage = prefs.getBoolean("login_bg_is_image", false)
+
+        val videoView = findViewById<VideoView>(R.id.loginVideoView)
+        val imageView = findViewById<ImageView?>(R.id.loginBgImageView)
+        if (customBgUri != null) {
+            if (customBgIsImage && imageView != null) {
+                imageView.setImageURI(Uri.parse(customBgUri))
+                imageView.visibility = View.VISIBLE
+                videoView.visibility = View.GONE
+            } else {
+                videoView.setVideoURI(Uri.parse(customBgUri))
+                videoView.setOnPreparedListener { mp ->
+                    mp.isLooping = true
+                    mp.setVolume(0f, 0f)
+                }
+                videoView.start()
+                videoView.visibility = View.VISIBLE
+                imageView?.visibility = View.GONE
+            }
+        } else {
+            // Default video
+            videoView.setVideoURI(Uri.parse("android.resource://" + packageName + "/raw/login_page_into_anime"))
+            videoView.setOnPreparedListener { mp ->
+                mp.isLooping = true
+                mp.setVolume(0f, 0f)
+            }
+            videoView.start()
+            videoView.visibility = View.VISIBLE
+            imageView?.visibility = View.GONE
+        }
+
         usernameInput = findViewById(R.id.usernameInput)
         passwordInput = findViewById(R.id.passwordInput)
         submitButton = findViewById(R.id.submitButton)
         signupButton = findViewById(R.id.signupButton)
 
-        val prefs = getEncryptedPrefs()
         val savedUsername = prefs.getString("username", null)
         val savedPassword = prefs.getString("password_hash", null)
         val savedName = prefs.getString("name", null)

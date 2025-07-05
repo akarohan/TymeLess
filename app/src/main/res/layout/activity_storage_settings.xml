@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/greyback">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/greyback"
+            android:title="Choose Storage"/>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <RadioGroup
+        android:id="@+id/storageRadioGroup"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="32dp"
+        android:background="@color/white"
+        android:padding="24dp">
+
+        <RadioButton
+            android:id="@+id/radioAppStorage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="App Storage (private to app)"
+            android:textColor="@color/black"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Data is stored only in the app. Uninstalling the app deletes all data."
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp"/>
+        <RadioButton
+            android:id="@+id/radioLocalStorage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Local Storage (accessible via file manager)"
+            android:textColor="@color/black"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Data is synced to local storage. If you uninstall, you can retrieve the last synced data."
+            android:textColor="@color/black"
+            android:textSize="14sp"/>
+
+        <Button
+            android:id="@+id/btnSyncNow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sync Now"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"/>
+
+        <LinearLayout
+            android:id="@+id/autoSyncLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Auto Sync"
+                android:textColor="@color/black"
+                android:textSize="16sp"/>
+            <Switch
+                android:id="@+id/switchAutoSync"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/pathLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp"
+            android:visibility="gone">
+            <Button
+                android:id="@+id/btnChoosePath"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Choose Path"/>
+            <TextView
+                android:id="@+id/tvCurrentPath"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="@color/black"
+                android:layout_marginStart="12dp"/>
+        </LinearLayout>
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/tvRestorePrompt"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/storageRadioGroup"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout> 

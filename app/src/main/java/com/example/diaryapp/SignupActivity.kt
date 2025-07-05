@@ -37,13 +37,13 @@ class SignupActivity : AppCompatActivity() {
             prefs.edit().putString("name", name)
                 .putString("username", username)
                 .putString("password_hash", hash(password)).apply()
-            goToMain(name)
+            Toast.makeText(this, "Registration successful! Please log in.", Toast.LENGTH_SHORT).show()
+            goToLogin()
         }
     }
 
-    private fun goToMain(name: String) {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra("user_name", name)
+    private fun goToLogin() {
+        val intent = Intent(this, AuthActivity::class.java)
         startActivity(intent)
         finish()
     }

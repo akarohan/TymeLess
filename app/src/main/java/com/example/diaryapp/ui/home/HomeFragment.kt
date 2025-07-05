@@ -24,6 +24,7 @@ import androidx.security.crypto.MasterKeys
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.example.diaryapp.R
 import androidx.navigation.fragment.findNavController
+import com.example.diaryapp.ThemeUtils
 
 class HomeFragment : Fragment() {
 
@@ -47,7 +48,11 @@ class HomeFragment : Fragment() {
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val root: View = binding.root
-
+        
+        // Set theme color only on the app bar (header)
+        // val themeColor = ThemeUtils.getCurrentThemeColor(requireActivity())
+        // binding.toolbar.setBackgroundColor(themeColor)
+        
         val swipeRefreshLayout = binding.swipeRefreshLayout
         recyclerView = binding.diaryRecyclerView
         recyclerView.layoutManager = LinearLayoutManager(requireContext())

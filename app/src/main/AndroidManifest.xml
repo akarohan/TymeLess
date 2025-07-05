@@ -51,6 +51,10 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         <activity android:name=".ui.home.EditNoteActivity" android:theme="@style/Theme.DiaryApp.NoActionBar" />
+        <activity
+            android:name=".LoginPageCustomizeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DiaryApp.NoActionBar" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -60,6 +64,9 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
     </application>
 
     <uses-permission android:name="android.permission.CAMERA" />

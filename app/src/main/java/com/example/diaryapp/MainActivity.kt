@@ -71,6 +71,10 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Set theme color only on the app bar (header)
+        val themeColor = ThemeUtils.getCurrentThemeColor(this)
+        binding.appBarMain.toolbar.setBackgroundColor(themeColor)
+
         // setSupportActionBar(binding.appBarMain.toolbar) // keep this to use the toolbar
         val drawerLayout: DrawerLayout = binding.drawerLayout
         val navView: NavigationView = findViewById(R.id.nav_view)
@@ -136,6 +140,96 @@ class MainActivity : AppCompatActivity() {
                     }
                     true
                 }
+                R.id.nav_customize_login -> {
+                    drawerLayout.closeDrawers()
+                    startActivity(Intent(this, LoginPageCustomizeActivity::class.java))
+                    // Clear checked state for all items
+                    val menu = navView.menu
+                    for (i in 0 until menu.size()) {
+                        menu.getItem(i).isChecked = false
+                    }
+                    true
+                }
+                R.id.nav_logout -> {
+                    drawerLayout.closeDrawers()
+                    // Clear only session-related preferences, preserve login credentials and images
+                    val prefs = getEncryptedPrefs()
+                    prefs.edit()
+                        // .remove("profile_pic_uri")
+                        // .remove("cover_pic_uri")
+                        .apply()
+                    // Redirect to AuthActivity
+                    val intent = Intent(this, AuthActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    finish()
+                    true
+                }
+                R.id.nav_change_theme -> {
+                    drawerLayout.closeDrawers()
+                    val prefsColor = getSharedPreferences("theme_prefs", MODE_PRIVATE)
+                    val defaultColor = ContextCompat.getColor(this, R.color.greyback)
+                    val currentColor = prefsColor.getInt("theme_color", defaultColor)
+                    
+                    // Comprehensive list of colors with names
+                    val colorOptions = intArrayOf(
+                        0xFFF44336.toInt(), // Red
+                        0xFFE91E63.toInt(), // Pink
+                        0xFF9C27B0.toInt(), // Purple
+                        0xFF673AB7.toInt(), // Deep Purple
+                        0xFF3F51B5.toInt(), // Indigo
+                        0xFF2196F3.toInt(), // Blue
+                        0xFF03A9F4.toInt(), // Light Blue
+                        0xFF00BCD4.toInt(), // Cyan
+                        0xFF009688.toInt(), // Teal
+                        0xFF4CAF50.toInt(), // Green
+                        0xFF8BC34A.toInt(), // Light Green
+                        0xFFCDDC39.toInt(), // Lime
+                        0xFFFFEB3B.toInt(), // Yellow
+                        0xFFFFC107.toInt(), // Amber
+                        0xFFFF9800.toInt(), // Orange
+                        0xFFFF5722.toInt(), // Deep Orange
+                        0xFF795548.toInt(), // Brown
+                        0xFF9E9E9E.toInt(), // Grey
+                        0xFF607D8B.toInt(), // Blue Grey
+                        0xFF000000.toInt(), // Black
+                        0xFFFFFFFF.toInt(), // White
+                        0xFFE0E0E0.toInt(), // Light Grey
+                        0xFFF5F5F5.toInt(), // Very Light Grey
+                        0xFFFAFAFA.toInt(), // Off White
+                        0xFF424242.toInt(), // Dark Grey
+                        0xFF212121.toInt(), // Very Dark Grey
+                        0xFF1A237E.toInt(), // Dark Blue
+                        0xFF0D47A1.toInt(), // Deep Blue
+                        0xFF004D40.toInt(), // Dark Teal
+                        0xFF1B5E20.toInt(), // Dark Green
+                        0xFFBF360C.toInt(), // Dark Orange
+                        0xFF4A148C.toInt(), // Dark Purple
+                        0xFF880E4F.toInt()  // Dark Pink
+                    )
+                    
+                    val colorNames = arrayOf(
+                        "Red", "Pink", "Purple", "Deep Purple", "Indigo", "Blue", "Light Blue", 
+                        "Cyan", "Teal", "Green", "Light Green", "Lime", "Yellow", "Amber", 
+                        "Orange", "Deep Orange", "Brown", "Grey", "Blue Grey", "Black", 
+                        "White", "Light Grey", "Very Light Grey", "Off White", "Dark Grey", 
+                        "Very Dark Grey", "Dark Blue", "Deep Blue", "Dark Teal", "Dark Green", 
+                        "Dark Orange", "Dark Purple", "Dark Pink"
+                    )
+                    
+                    AlertDialog.Builder(this)
+                        .setTitle("Pick a theme color")
+                        .setItems(colorNames) { _, which ->
+                            val color = colorOptions[which]
+                            prefsColor.edit().putInt("theme_color", color).apply()
+                            // Set theme color only on the app bar (header)
+                            binding.appBarMain.toolbar.setBackgroundColor(color)
+                            Toast.makeText(this, "Theme color applied!", Toast.LENGTH_SHORT).show()
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                    true
+                }
                 else -> false
             }
         }
@@ -147,10 +241,6 @@ class MainActivity : AppCompatActivity() {
         val nameTextView = headerView.findViewById<TextView>(R.id.navUserName)
         val usernameTextView = headerView.findViewById<TextView>(R.id.navUserUsername)
         val prefs = getEncryptedPrefs()
-        val loadedName = prefs.getString("name", "User")
-        val loadedUsername = prefs.getString("username", "username")
-        nameTextView?.text = loadedName
-        usernameTextView?.text = loadedUsername
         val profilePicUri = prefs.getString("profile_pic_uri", null)
         val coverPicUri = prefs.getString("cover_pic_uri", null)
         Log.d("PROFILE_IMAGE", "updateDrawerHeader profilePicUri: $profilePicUri")
@@ -171,6 +261,56 @@ class MainActivity : AppCompatActivity() {
                 .into(profileImageView)
         } else if (profileImageView != null) {
             profileImageView.setImageResource(R.drawable.ic_user_placeholder)
+        }
+        // Set the blurred background (cover photo)
+        val blurredBackground = headerView.findViewById<ImageView>(R.id.blurredBackground)
+        if (coverPicUri != null && blurredBackground != null) {
+            val uri = if (coverPicUri.startsWith("/")) {
+                android.net.Uri.fromFile(java.io.File(coverPicUri))
+            } else {
+                android.net.Uri.parse(coverPicUri)
+            }
+            Glide.with(this)
+                .asBitmap()
+                .load(uri)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
+                    override fun onResourceReady(resource: android.graphics.Bitmap, transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?) {
+                        val scaled = if (resource.width > 800 || resource.height > 800) {
+                            android.graphics.Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
+                        } else resource
+                        jp.wasabeef.blurry.Blurry.with(this@MainActivity)
+                            .radius(20)
+                            .from(scaled)
+                            .into(blurredBackground)
+                    }
+                    override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {}
+                })
+        } else if (profilePicUri != null && blurredBackground != null) {
+            // fallback: use profile pic as cover if no cover set
+            val uri = if (profilePicUri.startsWith("/")) {
+                android.net.Uri.fromFile(java.io.File(profilePicUri))
+            } else {
+                android.net.Uri.parse(profilePicUri)
+            }
+            Glide.with(this)
+                .asBitmap()
+                .load(uri)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
+                    override fun onResourceReady(resource: android.graphics.Bitmap, transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?) {
+                        val scaled = if (resource.width > 800 || resource.height > 800) {
+                            android.graphics.Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
+                        } else resource
+                        jp.wasabeef.blurry.Blurry.with(this@MainActivity)
+                            .radius(20)
+                            .from(scaled)
+                            .into(blurredBackground)
+                    }
+                    override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {}
+                })
         }
 
         profileCameraButton?.setOnClickListener {
@@ -265,17 +405,20 @@ class MainActivity : AppCompatActivity() {
     private fun updateDrawerHeader() {
         val navView: com.google.android.material.navigation.NavigationView = findViewById(R.id.nav_view)
         val headerView = navView.getHeaderView(0)
-        val blurredBackground = getBlurredBackgroundView()
+        val blurredBackground = headerView.findViewById<ImageView>(R.id.blurredBackground)
         val profileImageView = headerView.findViewById<ImageView>(R.id.imageView)
         val nameTextView = headerView.findViewById<TextView>(R.id.navUserName)
         val usernameTextView = headerView.findViewById<TextView>(R.id.navUserUsername)
         val prefs = getEncryptedPrefs()
-        val loadedName = prefs.getString("name", "User")
-        val loadedUsername = prefs.getString("username", "username")
-        nameTextView?.text = loadedName
-        usernameTextView?.text = loadedUsername
         val profilePicUri = prefs.getString("profile_pic_uri", null)
         val coverPicUri = prefs.getString("cover_pic_uri", null)
+        
+        // Update username and name in the navigation drawer header
+        val userName = prefs.getString("name", "User") ?: "User"
+        val userUsername = prefs.getString("username", "user") ?: "user"
+        nameTextView?.text = userName
+        usernameTextView?.text = userUsername
+        
         Log.d("PROFILE_IMAGE", "updateDrawerHeader profilePicUri: $profilePicUri")
         var fileExists = false
         var file: File? = null
@@ -295,7 +438,6 @@ class MainActivity : AppCompatActivity() {
         } else if (profileImageView != null) {
             profileImageView.setImageResource(R.drawable.ic_user_placeholder)
         }
-
         // Set the blurred background (cover photo)
         if (coverPicUri != null && blurredBackground != null) {
             val uri = if (coverPicUri.startsWith("/")) {
@@ -308,12 +450,12 @@ class MainActivity : AppCompatActivity() {
                 .load(uri)
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .skipMemoryCache(true)
-                .into(object : CustomTarget<android.graphics.Bitmap>() {
-                    override fun onResourceReady(resource: android.graphics.Bitmap, transition: Transition<in android.graphics.Bitmap>?) {
+                .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
+                    override fun onResourceReady(resource: android.graphics.Bitmap, transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?) {
                         val scaled = if (resource.width > 800 || resource.height > 800) {
-                            Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
+                            android.graphics.Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
                         } else resource
-                        Blurry.with(this@MainActivity)
+                        jp.wasabeef.blurry.Blurry.with(this@MainActivity)
                             .radius(20)
                             .from(scaled)
                             .into(blurredBackground)
@@ -332,12 +474,12 @@ class MainActivity : AppCompatActivity() {
                 .load(uri)
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .skipMemoryCache(true)
-                .into(object : CustomTarget<android.graphics.Bitmap>() {
-                    override fun onResourceReady(resource: android.graphics.Bitmap, transition: Transition<in android.graphics.Bitmap>?) {
+                .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
+                    override fun onResourceReady(resource: android.graphics.Bitmap, transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?) {
                         val scaled = if (resource.width > 800 || resource.height > 800) {
-                            Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
+                            android.graphics.Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
                         } else resource
-                        Blurry.with(this@MainActivity)
+                        jp.wasabeef.blurry.Blurry.with(this@MainActivity)
                             .radius(20)
                             .from(scaled)
                             .into(blurredBackground)
@@ -525,11 +667,5 @@ class MainActivity : AppCompatActivity() {
             hour in 12..16 -> "Good Afternoon, $name"
             else -> "Good Evening, $name"
         }
-    }
-
-    private fun getBlurredBackgroundView(): ImageView? {
-        val navView: NavigationView = findViewById(R.id.nav_view)
-        val headerView = navView.getHeaderView(0)
-        return headerView.findViewById(R.id.blurredBackground)
     }
 }

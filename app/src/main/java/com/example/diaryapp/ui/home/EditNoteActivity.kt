@@ -42,6 +42,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
 import android.util.Log
+import com.example.diaryapp.R
 
 class EditNoteActivity : AppCompatActivity() {
     private lateinit var titleEditText: EditText
@@ -96,8 +97,12 @@ class EditNoteActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_note)
+        
+        // Set theme color only on the app bar (header)
+        val themeColor = ThemeUtils.getCurrentThemeColor(this)
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        toolbar.setBackgroundColor(themeColor)
 
-        toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back_circle_white)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)

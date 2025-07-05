@@ -97,16 +97,13 @@ class EditEntryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_entry)
+        
+        // Set theme color only on the app bar (header)
+        val themeColor = ThemeUtils.getCurrentThemeColor(this)
+        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        toolbar.setBackgroundColor(themeColor)
+        
         mainEditText = findViewById(R.id.mainEditText)
-
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back_circle_white)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationOnClickListener {
-            wasManuallySaved = true
-            saveEntry(autoSave = false)
-        }
 
         val toolbarTitle = findViewById<TextView>(R.id.toolbarTitle)
         val datePickerChip = findViewById<Chip>(R.id.datePickerChip)
@@ -292,6 +289,11 @@ class EditEntryActivity : AppCompatActivity() {
             val thumbCenterX = moodSeekBar.paddingLeft + percent * availableWidth
             moodEmojiImageView.x = moodSeekBar.x + thumbCenterX - (moodEmojiImageView.width / 2)
         }
+
+        setSupportActionBar(toolbar)
+        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back_circle_white)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        toolbar.setNavigationOnClickListener { finish() }
     }
 
     override fun onPause() {

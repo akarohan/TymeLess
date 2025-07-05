@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#FFFFFF">
+
+    <Button
+        android:id="@+id/pickMediaButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pick Image or Video"
+        android:textColor="#000000" />
+
+    <ImageView
+        android:id="@+id/previewImage"
+        android:layout_width="250dp"
+        android:layout_height="400dp"
+        android:layout_marginTop="24dp"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <VideoView
+        android:id="@+id/previewVideo"
+        android:layout_width="250dp"
+        android:layout_height="400dp"
+        android:layout_marginTop="24dp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/saveButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save as Login Background"
+        android:textColor="#000000"
+        android:layout_marginTop="32dp" />
+
+</LinearLayout> 

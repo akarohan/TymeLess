@@ -19,6 +19,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import android.os.Handler
 import android.os.Looper
+import com.example.diaryapp.ThemeUtils
 
 class NotesHomeFragment : Fragment() {
     private var _binding: FragmentNotesHomeBinding? = null
@@ -34,6 +35,11 @@ class NotesHomeFragment : Fragment() {
     ): View {
         _binding = FragmentNotesHomeBinding.inflate(inflater, container, false)
         val root: View = binding.root
+        
+        // Set theme color only on the app bar (header)
+        // val themeColor = ThemeUtils.getCurrentThemeColor(requireActivity())
+        // binding.toolbar.setBackgroundColor(themeColor)
+        
         val fab = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFab)
         val fabMenu1 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu1)
         val fabMenu2 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu2)
