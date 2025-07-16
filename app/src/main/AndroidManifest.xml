@@ -51,6 +51,9 @@
             android:name=".LoginPageCustomizeActivity"
             android:exported="false"
             android:theme="@style/Theme.DiaryApp.NoActionBar" />
+        <activity android:name=".BackupRestoreActivity" android:theme="@style/Theme.DiaryApp.NoActionBar" />
+        <activity android:name=".RestoreDataActivity" />
+        <activity android:name=".PostAuthRouterActivity" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

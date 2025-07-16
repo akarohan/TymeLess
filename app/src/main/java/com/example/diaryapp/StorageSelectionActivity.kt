@@ -82,8 +82,13 @@ class StorageSelectionActivity : AppCompatActivity() {
                         val backupUserKey = if (jsonArray.length() > 0) jsonArray.getJSONObject(0).optString("userKey", null) else null
                         val userKey = prefs.getString("user_key", null)
                         if (backupUserKey != null && userKey != null && backupUserKey == userKey) {
-                            tvRestorePrompt.text = "Restore previous data from this location? (Will happen automatically on first launch)"
-                            tvRestorePrompt.visibility = View.VISIBLE
+                            // Launch restore page
+                            val intent = Intent(this, RestoreDataActivity::class.java)
+                            intent.putExtra("backup_uri", backupUri.toString())
+                            intent.putExtra("backup_path", backupUri.toString())
+                            startActivity(intent)
+                            finish()
+                            return
                         } else {
                             tvRestorePrompt.text = "Backup found, but it does not match your account."
                             tvRestorePrompt.visibility = View.VISIBLE

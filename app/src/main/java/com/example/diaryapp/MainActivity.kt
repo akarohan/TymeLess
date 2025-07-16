@@ -254,6 +254,11 @@ class MainActivity : AppCompatActivity() {
                     pickThemeHeaderPicLauncher.launch("image/*")
                     true
                 }
+                R.id.nav_backup_restore -> {
+                    drawerLayout.closeDrawers()
+                    startActivity(Intent(this, BackupRestoreActivity::class.java))
+                    true
+                }
                 else -> false
             }
         }
@@ -511,23 +516,23 @@ class MainActivity : AppCompatActivity() {
                 null
             }
             if (uri != null) {
-                Glide.with(this)
-                    .asBitmap()
-                    .load(uri)
+            Glide.with(this)
+                .asBitmap()
+                .load(uri)
                     .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
-                    .skipMemoryCache(true)
+                .skipMemoryCache(true)
                     .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
                         override fun onResourceReady(resource: Bitmap, transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?) {
-                            val scaled = if (resource.width > 800 || resource.height > 800) {
-                                Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
-                            } else resource
+                        val scaled = if (resource.width > 800 || resource.height > 800) {
+                            Bitmap.createScaledBitmap(resource, 800, 800 * resource.height / resource.width, true)
+                        } else resource
                             jp.wasabeef.blurry.Blurry.with(this@MainActivity)
-                                .radius(20)
-                                .from(scaled)
-                                .into(blurredBackground)
-                        }
-                        override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {}
-                    })
+                            .radius(20)
+                            .from(scaled)
+                            .into(blurredBackground)
+                    }
+                    override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {}
+                })
             }
         }
     }

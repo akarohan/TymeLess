@@ -1,71 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/ic_back_anime2">
+    android:layout_height="match_parent">
 
-    <!-- App Icon near the top -->
     <ImageView
-        android:id="@+id/appIconImageView"
-        android:layout_width="130dp"
-        android:layout_height="117dp"
-        android:src="@drawable/ic_timeless_logo"
-        android:contentDescription="App Icon"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="80dp" />
+        android:id="@+id/splashImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/loading1"
+        android:scaleType="centerCrop"
+        android:contentDescription="Splash Image" />
 
-    <!-- Vertical guideline at 0% for TymeLess text logo -->
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline25"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintGuide_percent="0.0"
-        android:orientation="horizontal" />
-
-    <!-- Vertical guideline at 50% for TymeLess text logo -->
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline50"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintGuide_percent="0.5"
-        android:orientation="horizontal" />
-
-    <!-- Vertical guideline at 65% for tagline -->
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline65"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintGuide_percent="0.65"
-        android:orientation="horizontal" />
-
-    <!-- TymeLess Text Logo at 50% -->
-    <ImageView
-        android:id="@+id/textLogoImageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/tymeless_textlogo"
-        android:contentDescription="TymeLess Logo"
-        app:layout_constraintTop_toTopOf="@id/guideline50"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Tagline at 65% -->
-    <TextView
-        android:id="@+id/taglineTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/bebas_neue"
-        android:gravity="center"
-        android:text="MEMORIES TO REMAIN BEYOND TIME"
-        android:textColor="@color/skyblue_note_card"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="@id/guideline65"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

@@ -38,7 +38,9 @@ class SignupActivity : AppCompatActivity() {
                 .putString("username", username)
                 .putString("password_hash", hash(password)).apply()
             Toast.makeText(this, "Registration successful! Please log in.", Toast.LENGTH_SHORT).show()
-            goToLogin()
+            val intent = Intent(this, AuthActivity::class.java)
+            startActivity(intent)
+            finish()
         }
     }
 
@@ -59,5 +61,42 @@ class SignupActivity : AppCompatActivity() {
     private fun hash(input: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
         return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun checkForAccountBackupAndPrompt(username: String) {
+        val backupDir = filesDir.resolve("backups")
+        if (backupDir.exists()) {
+            val backupFiles = backupDir.listFiles { file -> file.name.endsWith(".zip") }
+            if (!backupFiles.isNullOrEmpty()) {
+                for (zipFile in backupFiles) {
+                    // Look for notes.json inside the zip
+                    val tempDir = cacheDir.resolve("backup_check")
+                    tempDir.mkdirs()
+                    try {
+                        java.util.zip.ZipFile(zipFile).use { zip ->
+                            val entry = zip.getEntry("notes.json")
+                            if (entry != null) {
+                                val input = zip.getInputStream(entry)
+                                val notesJson = input.bufferedReader().use { it.readText() }
+                                val obj = org.json.JSONObject(notesJson)
+                                val backupUserKey = obj.optString("user_key", null)
+                                val backupUsername = obj.optString("username", null)
+                                val userKey = getEncryptedPrefs().getString("user_key", null)
+                                if ((backupUsername == username) || (userKey != null && backupUserKey == userKey)) {
+                                    // Always route to restore page
+                                    val intent = Intent(this, RestoreDataActivity::class.java)
+                                    intent.putExtra("backup_zip_path", zipFile.absolutePath)
+                                    startActivity(intent)
+                                    finish()
+                                    return
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+            }
+        }
+        Toast.makeText(this, "Registration successful! Please log in.", Toast.LENGTH_SHORT).show()
+        goToLogin()
     }
 } 
