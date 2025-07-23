@@ -57,7 +57,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.diaryapp"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = major * 10000 + minor * 100 + patch
         versionName = "$major.$minor.$patch"
@@ -128,4 +128,5 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
 
     implementation("jp.wasabeef:blurry:4.0.1")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 }

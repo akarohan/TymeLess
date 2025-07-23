@@ -33,17 +33,20 @@ class AuthActivity : AppCompatActivity() {
     private lateinit var passwordInput: EditText
     private lateinit var submitButton: Button
     private lateinit var signupButton: Button
+    private lateinit var videoView: VideoView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_auth)
 
+        // Initialize videoView first to avoid lateinit issues
+        videoView = findViewById<VideoView>(R.id.loginVideoView)
+        
         val prefs = getEncryptedPrefs()
         if (prefs == null) return // If prefs couldn't be loaded, wait for user action
         val customBgUri = prefs.getString("login_bg_uri", null)
         val customBgIsImage = prefs.getBoolean("login_bg_is_image", false)
 
-        val videoView = findViewById<VideoView>(R.id.loginVideoView)
         val imageView = findViewById<ImageView?>(R.id.loginBgImageView)
         if (customBgUri != null) {
             if (customBgIsImage && imageView != null) {
@@ -98,6 +101,21 @@ class AuthActivity : AppCompatActivity() {
                 Toast.makeText(this, "Invalid username or password", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        videoView.stopPlayback()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        videoView.stopPlayback()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        videoView.start()
     }
 
     private fun goToMain(name: String) {

@@ -5,6 +5,8 @@
     android:viewportWidth="48"
     android:viewportHeight="48">
     <path android:fillColor="#E57373" android:pathData="M24,4a20,20 0 1,0 0,40a20,20 0 1,0 0,-40z"/>
+    <!-- Outline -->
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#000000" android:strokeWidth="2" android:pathData="M24,4a20,20 0 1,0 0,40a20,20 0 1,0 0,-40z"/>
     <!-- Left eye -->
     <path android:fillColor="#fff" android:pathData="M16,20 m-3,0 a3,4 0 1,0 6,0 a3,4 0 1,0 -6,0"/>
     <!-- Right eye -->

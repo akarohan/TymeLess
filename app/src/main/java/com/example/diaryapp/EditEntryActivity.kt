@@ -1,5 +1,6 @@
 package com.example.diaryapp
 
+import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -42,6 +43,11 @@ import com.example.diaryapp.AudioChipAdapter
 import com.example.diaryapp.AudioItem
 import android.media.MediaPlayer
 import androidx.recyclerview.widget.GridLayoutManager
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import android.view.animation.AlphaAnimation
+import android.content.Intent
+import android.util.Log
 
 class EditEntryActivity : AppCompatActivity() {
     private lateinit var richEditor: RichEditor
@@ -138,13 +144,35 @@ class EditEntryActivity : AppCompatActivity() {
                 val moodSeekBar = findViewById<android.widget.SeekBar>(R.id.moodSeekBar)
                 val moodEmojiImageView = findViewById<android.widget.ImageView>(R.id.moodEmojiImageView)
                 val moodDrawables = arrayOf(
-                    R.drawable.ic_mood_neg5, R.drawable.ic_mood_neg4, R.drawable.ic_mood_neg3,
-                    R.drawable.ic_mood_neg2, R.drawable.ic_mood_neg1, R.drawable.ic_mood_0,
-                    R.drawable.ic_mood_1, R.drawable.ic_mood_2, R.drawable.ic_mood_3,
-                    R.drawable.ic_mood_4, R.drawable.ic_mood_5
+                    R.drawable.ic_mood_neg5, // 0: most negative (red)
+                    R.drawable.ic_mood_neg4, // 1
+                    R.drawable.ic_mood_neg3, // 2
+                    R.drawable.ic_mood_neg2, // 3
+                    R.drawable.ic_mood_neg1, // 4
+                    R.drawable.ic_mood_0,    // 5: neutral (black, center)
+                    R.drawable.ic_mood_1,    // 6
+                    R.drawable.ic_mood_2,    // 7
+                    R.drawable.ic_mood_3,    // 8
+                    R.drawable.ic_mood_4,    // 9
+                    R.drawable.ic_mood_5     // 10: most positive (green)
                 )
                 moodEmojiImageView.setImageResource(moodDrawables[5])
                 moodSeekBar.progress = entry.mood
+                val rootLayout = findViewById<View>(R.id.rootLayout)
+                val moodColors = arrayOf(
+                    android.graphics.Color.parseColor("#D32F2F"), // very sad (red)
+                    android.graphics.Color.parseColor("#E57373"), // sad
+                    android.graphics.Color.parseColor("#FFB300"), // less sad/orange
+                    android.graphics.Color.parseColor("#FFD54F"), // neutral yellow
+                    android.graphics.Color.parseColor("#FFF176"), // neutral
+                    ContextCompat.getColor(this@EditEntryActivity, R.color.greyback), // neutral/black (original grey)
+                    android.graphics.Color.parseColor("#90EE90"), // light green
+                    android.graphics.Color.parseColor("#66BB6A"), // medium-light green
+                    android.graphics.Color.parseColor("#43A047"), // medium green
+                    android.graphics.Color.parseColor("#388E3C"), // grass green
+                    android.graphics.Color.parseColor("#228B22")  // very happy (deep green)
+                )
+                rootLayout.setBackgroundColor(moodColors[entry.mood])
             } else {
                 titleEditText.setText("")
                 mainEditText.setText("")
@@ -253,28 +281,60 @@ class EditEntryActivity : AppCompatActivity() {
 
         // Mood slider setup
         val moodSeekBar = findViewById<android.widget.SeekBar>(R.id.moodSeekBar)
+        val moodThumbCard = findViewById<androidx.cardview.widget.CardView>(R.id.moodThumbCard)
         val moodEmojiImageView = findViewById<android.widget.ImageView>(R.id.moodEmojiImageView)
         val moodDrawables = arrayOf(
-            R.drawable.ic_mood_neg5, R.drawable.ic_mood_neg4, R.drawable.ic_mood_neg3,
-            R.drawable.ic_mood_neg2, R.drawable.ic_mood_neg1, R.drawable.ic_mood_0,
-            R.drawable.ic_mood_1, R.drawable.ic_mood_2, R.drawable.ic_mood_3,
-            R.drawable.ic_mood_4, R.drawable.ic_mood_5
+            R.drawable.ic_mood_neg5, // 0: most negative (red)
+            R.drawable.ic_mood_neg4, // 1
+            R.drawable.ic_mood_neg3, // 2
+            R.drawable.ic_mood_neg2, // 3
+            R.drawable.ic_mood_neg1, // 4
+            R.drawable.ic_mood_0,    // 5: neutral (black, center)
+            R.drawable.ic_mood_1,    // 6
+            R.drawable.ic_mood_2,    // 7
+            R.drawable.ic_mood_3,    // 8
+            R.drawable.ic_mood_4,    // 9
+            R.drawable.ic_mood_5     // 10: most positive (green)
         )
+        moodSeekBar.max = 10
+        moodSeekBar.progress = 5
 
         // Set default emoji for new entries
         moodEmojiImageView.setImageResource(moodDrawables[5])
         moodSeekBar.progress = 5
 
+        // Mood slider color interpolation (light green to grass green from center to right)
+        val lightGreen = android.graphics.Color.parseColor("#90EE90")
+        val grassGreen = android.graphics.Color.parseColor("#228B22")
+
+        val moodSliderFrame = findViewById<View>(R.id.moodSliderFrame)
+        val moodColors = arrayOf(
+            android.graphics.Color.parseColor("#D32F2F"), // very sad (red)
+            android.graphics.Color.parseColor("#E57373"), // sad
+            android.graphics.Color.parseColor("#FFB300"), // less sad/orange
+            android.graphics.Color.parseColor("#FFD54F"), // neutral yellow
+            android.graphics.Color.parseColor("#FFF176"), // neutral
+            ContextCompat.getColor(this, R.color.greyback), // neutral/black (original grey)
+            android.graphics.Color.parseColor("#90EE90"), // light green
+            android.graphics.Color.parseColor("#66BB6A"), // medium-light green
+            android.graphics.Color.parseColor("#43A047"), // medium green
+            android.graphics.Color.parseColor("#388E3C"), // grass green
+            android.graphics.Color.parseColor("#228B22")  // very happy (deep green)
+        )
+
         moodSeekBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
                 moodEmojiImageView.setImageResource(moodDrawables[progress])
+                moodEmojiImageView.clearColorFilter()
+                val rootLayout = findViewById<View>(R.id.rootLayout)
+                rootLayout.setBackgroundColor(moodColors[progress])
                 seekBar?.let {
                     val availableWidth = it.width - it.paddingLeft - it.paddingRight
                     val max = it.max
                     val percent = progress.toFloat() / max
-                    val thumbCenterX = it.paddingLeft + percent * availableWidth
-                    // Set emoji X relative to the SeekBar's left edge
-                    moodEmojiImageView.x = it.x + thumbCenterX - (moodEmojiImageView.width / 2)
+                    val stepWidth = availableWidth / max.toFloat()
+                    val left = it.paddingLeft + percent * availableWidth - (moodThumbCard.width / 2) + stepWidth
+                    moodThumbCard.translationX = left
                 }
             }
             override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
@@ -286,14 +346,19 @@ class EditEntryActivity : AppCompatActivity() {
             val availableWidth = moodSeekBar.width - moodSeekBar.paddingLeft - moodSeekBar.paddingRight
             val max = moodSeekBar.max
             val percent = moodSeekBar.progress.toFloat() / max
-            val thumbCenterX = moodSeekBar.paddingLeft + percent * availableWidth
-            moodEmojiImageView.x = moodSeekBar.x + thumbCenterX - (moodEmojiImageView.width / 2)
+            val stepWidth = availableWidth / max.toFloat()
+            val left = moodSeekBar.paddingLeft + percent * availableWidth - (moodThumbCard.width / 2) + stepWidth
+            moodThumbCard.translationX = left
         }
 
         setSupportActionBar(toolbar)
         supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back_circle_white)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
+    }
+
+    override fun onResume() {
+        super.onResume()
     }
 
     override fun onPause() {
@@ -661,6 +726,16 @@ class EditEntryActivity : AppCompatActivity() {
         }
     }
 
+
+
+
+
+
+
+
+
+
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -687,4 +762,12 @@ class EditEntryActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun getEncryptedPrefs() = androidx.security.crypto.EncryptedSharedPreferences.create(
+        "diary_auth_prefs",
+        androidx.security.crypto.MasterKeys.getOrCreate(androidx.security.crypto.MasterKeys.AES256_GCM_SPEC),
+        this,
+        androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
 } 

@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import com.example.diaryapp.data.Note
 import com.example.diaryapp.data.NoteDao
 
-@Database(entities = [DiaryEntry::class, Note::class], version = 8, exportSchema = false)
+@Database(entities = [DiaryEntry::class, Note::class], version = 9, exportSchema = false)
 @TypeConverters(DiaryTypeConverters::class)
 abstract class DiaryDatabase : RoomDatabase() {
     abstract fun diaryEntryDao(): DiaryEntryDao

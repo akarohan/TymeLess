@@ -259,6 +259,7 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent(this, BackupRestoreActivity::class.java))
                     true
                 }
+
                 else -> false
             }
         }

@@ -15,6 +15,6 @@ data class DiaryEntry(
     val title: String? = null,
     @TypeConverters(DiaryTypeConverters::class)
     val audioList: List<AudioItem> = emptyList(),
-    val stepCount: Int? = null, // For steps feature
+
     val mood: Int = 5 // Mood rating from -5 to 5, default neutral (5)
 ) 

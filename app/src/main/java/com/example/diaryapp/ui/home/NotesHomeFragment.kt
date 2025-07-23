@@ -50,14 +50,12 @@ class NotesHomeFragment : Fragment() {
         val fabMenu1 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu1)
         val fabMenu3 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu3)
         val fabMenu4 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu4)
-        val fabMenu5 = binding.root.findViewById<FloatingActionButton>(R.id.addNotesFabMenu5)
         fab.setOnClickListener {
             fabMenuOpen = !fabMenuOpen
             if (fabMenuOpen) {
                 fabMenu1.show()
                 fabMenu3.show()
                 fabMenu4.show()
-                fabMenu5.show()
                 fab.setImageResource(R.drawable.ic_keyboard_arrow_up_white_24dp)
                 fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
                 fab.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
@@ -65,14 +63,10 @@ class NotesHomeFragment : Fragment() {
                 fabMenu1.hide()
                 fabMenu3.hide()
                 fabMenu4.hide()
-                fabMenu5.hide()
                 fab.setImageResource(R.drawable.ic_add_white)
                 fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
                 fab.imageTintList = null
             }
-        }
-        fabMenu5.setOnClickListener {
-            findNavController().navigate(R.id.nav_home)
         }
         // Setup RecyclerView for notes
         notesAdapter = NotesAdapter(
@@ -129,13 +123,49 @@ class NotesHomeFragment : Fragment() {
                     fabMenu1.hide()
                     fabMenu3.hide()
                     fabMenu4.hide()
-                    fabMenu5.hide()
                     fab.setImageResource(R.drawable.ic_add_white)
                     fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
                     fab.imageTintList = null
                 }
             }
         })
+
+        // --- Bottom Notch Navigation Setup ---
+        val notchInclude = binding.root.findViewById<View>(R.id.bottomNotchNavInclude)
+        val diaryTab = notchInclude.findViewById<View>(R.id.diaryTab)
+        val notesTab = notchInclude.findViewById<View>(R.id.notesTab)
+        val diaryIcon = notchInclude.findViewById<android.widget.ImageView>(R.id.diaryIcon)
+        val notesIcon = notchInclude.findViewById<android.widget.ImageView>(R.id.notesIcon)
+        val diaryLabel = notchInclude.findViewById<android.widget.TextView>(R.id.diaryLabel)
+        val notesLabel = notchInclude.findViewById<android.widget.TextView>(R.id.notesLabel)
+
+        // Set Notes as selected by default
+        diaryTab.isSelected = false
+        notesTab.isSelected = true
+        diaryIcon.setColorFilter(android.graphics.Color.BLACK)
+        diaryLabel.setTextColor(android.graphics.Color.BLACK)
+        notesIcon.setColorFilter(android.graphics.Color.WHITE)
+        notesLabel.setTextColor(android.graphics.Color.WHITE)
+
+        diaryTab.setOnClickListener {
+            // Switch to Diary, update UI and navigate
+            diaryTab.isSelected = true
+            notesTab.isSelected = false
+            diaryIcon.setColorFilter(android.graphics.Color.WHITE)
+            diaryLabel.setTextColor(android.graphics.Color.WHITE)
+            notesIcon.setColorFilter(android.graphics.Color.BLACK)
+            notesLabel.setTextColor(android.graphics.Color.BLACK)
+            findNavController().navigate(R.id.nav_home)
+        }
+        notesTab.setOnClickListener {
+            // Already on Notes, just update UI
+            diaryTab.isSelected = false
+            notesTab.isSelected = true
+            diaryIcon.setColorFilter(android.graphics.Color.BLACK)
+            diaryLabel.setTextColor(android.graphics.Color.BLACK)
+            notesIcon.setColorFilter(android.graphics.Color.WHITE)
+            notesLabel.setTextColor(android.graphics.Color.WHITE)
+        }
         return root
     }
 

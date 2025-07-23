@@ -93,4 +93,14 @@
         app:elevation="0dp"
         app:rippleColor="@android:color/transparent"/>
 
+    <include
+        layout="@layout/bottom_notch_nav"
+        android:id="@+id/bottomNotchNavInclude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="16dp"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout> 

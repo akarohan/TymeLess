@@ -28,6 +28,7 @@
             android:id="@+id/nav_backup_restore"
             android:icon="@drawable/ic_backup"
             android:title="Backup and Restore" />
+
         <item
             android:id="@+id/nav_logout"
             android:icon="@drawable/ic_logout_black"

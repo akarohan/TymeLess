@@ -4,11 +4,14 @@
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
-    <path android:fillColor="#FFB300" android:pathData="M24,4a20,20 0 1,0 0,40a20,20 0 1,0 0,-40z"/>
+    <!-- Medium green face -->
+    <path android:fillColor="#43A047" android:pathData="M24,4a20,20 0 1,0 0,40a20,20 0 1,0 0,-40z"/>
     <!-- Left eye -->
     <path android:fillColor="#fff" android:pathData="M16,20 m-3,0 a3,4 0 1,0 6,0 a3,4 0 1,0 -6,0"/>
     <!-- Right eye -->
     <path android:fillColor="#fff" android:pathData="M32,20 m-3,0 a3,4 0 1,0 6,0 a3,4 0 1,0 -6,0"/>
-    <!-- Happy mouth centered at Y=32 -->
-    <path android:strokeColor="#fff" android:strokeWidth="2" android:pathData="M16,32 Q24,38 32,32"/>
+    <!-- Happy mouth -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="2" android:fillColor="@android:color/transparent" android:pathData="M18,30 Q24,36 30,30"/>
+    <!-- Outline -->
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#000000" android:strokeWidth="2" android:pathData="M24,4a20,20 0 1,0 0,40a20,20 0 1,0 0,-40z"/>
 </vector> 

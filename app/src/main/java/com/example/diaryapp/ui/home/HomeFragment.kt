@@ -101,19 +101,18 @@ class HomeFragment : Fragment() {
         }
 
         val fab = binding.addEntryFab
-        val fabMenu1 = binding.root.findViewById<FloatingActionButton>(R.id.addEntryFabMenu1)
+        // REMOVE addEntryFabMenu1 (the ^ button) and its click listener
         val fabMenu2 = binding.root.findViewById<FloatingActionButton>(R.id.addEntryFabMenu2)
         var fabMenuOpen = false
         fab.setOnClickListener {
             fabMenuOpen = !fabMenuOpen
+            // Only handle fabMenu2
             if (fabMenuOpen) {
-                fabMenu1.show()
                 fabMenu2.show()
                 fab.setImageResource(R.drawable.ic_keyboard_arrow_up_white_24dp)
                 fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
                 fab.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
             } else {
-                fabMenu1.hide()
                 fabMenu2.hide()
                 fab.setImageResource(R.drawable.ic_add_white)
                 fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
@@ -121,10 +120,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        fabMenu1.setOnClickListener {
-            findNavController().navigate(R.id.nav_notes_home)
-        }
-
+        // REMOVE fabMenu1 click listener
         fabMenu2.setOnClickListener {
             val intent = Intent(requireContext(), EditEntryActivity::class.java)
             // No extras: new blank entry
@@ -135,7 +131,6 @@ class HomeFragment : Fragment() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 if (fabMenuOpen && (dx != 0 || dy != 0)) {
                     fabMenuOpen = false
-                    fabMenu1.hide()
                     fabMenu2.hide()
                     fab.setImageResource(R.drawable.ic_add_white)
                     fab.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
@@ -143,6 +138,43 @@ class HomeFragment : Fragment() {
                 }
             }
         })
+
+        // --- Bottom Notch Navigation Setup ---
+        val notchInclude = binding.root.findViewById<View>(R.id.bottomNotchNavInclude)
+        val diaryTab = notchInclude.findViewById<View>(R.id.diaryTab)
+        val notesTab = notchInclude.findViewById<View>(R.id.notesTab)
+        val diaryIcon = notchInclude.findViewById<android.widget.ImageView>(R.id.diaryIcon)
+        val notesIcon = notchInclude.findViewById<android.widget.ImageView>(R.id.notesIcon)
+        val diaryLabel = notchInclude.findViewById<android.widget.TextView>(R.id.diaryLabel)
+        val notesLabel = notchInclude.findViewById<android.widget.TextView>(R.id.notesLabel)
+
+        // Set Diary as selected by default
+        diaryTab.isSelected = true
+        notesTab.isSelected = false
+        diaryIcon.setColorFilter(android.graphics.Color.WHITE)
+        diaryLabel.setTextColor(android.graphics.Color.WHITE)
+        notesIcon.setColorFilter(android.graphics.Color.BLACK)
+        notesLabel.setTextColor(android.graphics.Color.BLACK)
+
+        diaryTab.setOnClickListener {
+            // Already on Diary, just update UI
+            diaryTab.isSelected = true
+            notesTab.isSelected = false
+            diaryIcon.setColorFilter(android.graphics.Color.WHITE)
+            diaryLabel.setTextColor(android.graphics.Color.WHITE)
+            notesIcon.setColorFilter(android.graphics.Color.BLACK)
+            notesLabel.setTextColor(android.graphics.Color.BLACK)
+        }
+        notesTab.setOnClickListener {
+            // Switch to Notes, update UI and navigate
+            diaryTab.isSelected = false
+            notesTab.isSelected = true
+            diaryIcon.setColorFilter(android.graphics.Color.BLACK)
+            diaryLabel.setTextColor(android.graphics.Color.BLACK)
+            notesIcon.setColorFilter(android.graphics.Color.WHITE)
+            notesLabel.setTextColor(android.graphics.Color.WHITE)
+            findNavController().navigate(R.id.nav_notes_home)
+        }
 
         return root
     }
